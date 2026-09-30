@@ -139,7 +139,7 @@
   </dialog>
 
   <dialog id="noteDialog" class="dialog compact">
-    <form method="dialog" id="noteForm"><div class="dialog-head"><div><p class="eyebrow">DIÁRIO</p><h2>Nova página</h2></div><button type="button" data-close-dialog>×</button></div><label>Título<input name="title" required placeholder="Título da anotação"></label><label>Conteúdo<textarea name="content" rows="7" placeholder="Escreva livremente. Use # para títulos e - para listas."></textarea></label><div class="format-help"><span><b>#</b> Título</span><span><b>–</b> Lista</span><span><b>**</b> Destaque</span></div><div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button value="default" class="primary-button" id="saveNote">Salvar página</button></div></form>
+    <form id="noteForm"><div class="dialog-head"><div><p class="eyebrow">DIÁRIO</p><h2 id="noteDialogTitle">Nova página</h2></div><button type="button" data-close-dialog aria-label="Fechar">×</button></div><label>Título<input name="title" required placeholder="Título da anotação"></label><label>Conteúdo<textarea name="content" rows="7" placeholder="Escreva livremente. Use # para títulos e - para listas."></textarea></label><div class="format-help"><span><b>#</b> Título</span><span><b>–</b> Lista</span><span><b>**</b> Destaque</span></div><div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button" id="saveNote">Salvar página</button></div></form>
   </dialog>
 
   <dialog id="deleteProjectDialog" class="dialog compact">
