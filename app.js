@@ -10,6 +10,8 @@ const deleteProjectDialog = $('#deleteProjectDialog');
 const toast = $('#toast');
 let projects = [];
 let activeProject = null;
+let diaryEntries = [];
+let editingDiaryIndex = null;
 
 projectSwitcher.addEventListener('click', () => {
   const willOpen = projectMenu.hidden;
@@ -91,13 +93,20 @@ async function openProject(path) {
         loadJson(`projetos/${path}/${project.atividades}`)
       ]);
     renderDecks(decks);
-    renderDiary(diary);
+    const savedDiaryEntries = readLocalJson('card-builder-notes', [])
+      .filter((note) => note.project === path && Number.isInteger(note.index));
+    diaryEntries = diary.map((entry, index) => savedDiaryEntries.find((note) => note.index === index)?.entry || entry);
+    savedDiaryEntries
+      .filter((note) => note.index >= diaryEntries.length)
+      .sort((a, b) => a.index - b.index)
+      .forEach((note) => diaryEntries.push(note.entry));
+    renderDiary();
     renderActivities(activities);
     $('#deckCount').textContent = decks.length;
     $('#cardCount').textContent = decks.reduce((total, deck) => total + deck.quantidade, 0);
-    $('#diaryCount').textContent = diary.length;
+    $('#diaryCount').textContent = diaryEntries.length;
     $('#navDeckCount').textContent = decks.length;
-    $('#navDiaryCount').textContent = diary.length;
+    $('#navDiaryCount').textContent = diaryEntries.length;
     history.replaceState(null, '', `#projeto/${path}`);
     showToast('Projeto carregado', `${project.nome} está pronto para editar.`);
   } catch (error) {
@@ -119,10 +128,20 @@ function readLocalJson(key, fallback) {
   }
 }
 
-function renderDiary(entries) {
-  $('#noteList').innerHTML = entries.length ? entries.slice(0, 3).map((entry, index) => `
-    <button><span class="note-icon ${['', 'peach', 'teal-bg'][index]}">▤</span><span><strong>${escapeHtml(entry.titulo)}</strong><small>${escapeHtml(entry.resumo)}</small></span><time>${escapeHtml(entry.data)}<br><b>${escapeHtml(entry.hora)}</b></time></button>
+function renderDiary() {
+  $('#noteList').innerHTML = diaryEntries.length ? diaryEntries.slice(0, 3).map((entry, index) => `
+    <button type="button" data-diary-index="${index}" aria-label="Editar ${escapeHtml(entry.titulo)}"><span class="note-icon ${['', 'peach', 'teal-bg'][index]}">▤</span><span><strong>${escapeHtml(entry.titulo)}</strong><small>${escapeHtml(entry.resumo)}</small></span><time>${escapeHtml(entry.data)}<br><b>${escapeHtml(entry.hora)}</b></time></button>
   `).join('') : '<p class="empty-state">O diário ainda não tem páginas.</p>';
+  $$('[data-diary-index]').forEach((button) => button.addEventListener('click', () => {
+    const index = Number(button.dataset.diaryIndex);
+    const entry = diaryEntries[index];
+    editingDiaryIndex = index;
+    $('#noteDialogTitle').textContent = 'Editar página';
+    $('#saveNote').textContent = 'Salvar alterações';
+    $('#noteForm').elements.title.value = entry.titulo;
+    $('#noteForm').elements.content.value = entry.conteudo || entry.resumo || '';
+    noteDialog.showModal();
+  }));
 }
 
 function renderActivities(entries) {
@@ -161,7 +180,13 @@ function showHome() {
 $('#backToProjects').addEventListener('click', showHome);
 $('#newDeckButton').addEventListener('click', () => deckDialog.showModal());
 $('#newProjectButton').addEventListener('click', () => projectDialog.showModal());
-$('#newNoteButton').addEventListener('click', () => noteDialog.showModal());
+$('#newNoteButton').addEventListener('click', () => {
+  editingDiaryIndex = null;
+  $('#noteForm').reset();
+  $('#noteDialogTitle').textContent = 'Nova página';
+  $('#saveNote').textContent = 'Salvar página';
+  noteDialog.showModal();
+});
 $('#githubButton').addEventListener('click', () => $('#githubDialog').showModal());
 $('#menuButton').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
 
@@ -262,15 +287,38 @@ $$('[data-close-dialog]').forEach((button) => button.addEventListener('click', (
   button.closest('dialog').close('cancel');
 }));
 
-$('#saveNote').addEventListener('click', (event) => {
-  const form = $('#noteForm');
-  if (!form.reportValidity()) { event.preventDefault(); return; }
+$('#noteForm').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  if (!form.reportValidity() || !activeProject) return;
   const data = new FormData(form);
-  const notes = JSON.parse(localStorage.getItem('card-builder-notes') || '[]');
-  notes.push({ project: activeProject?.path, title: data.get('title'), content: data.get('content'), updatedAt: new Date().toISOString() });
+  const now = new Date();
+  const index = editingDiaryIndex ?? diaryEntries.length;
+  const previousEntry = diaryEntries[index] || {};
+  const entry = {
+    ...previousEntry,
+    titulo: data.get('title').trim(),
+    conteudo: data.get('content').trim(),
+    resumo: data.get('content').trim().replace(/\s+/g, ' ').slice(0, 55) || 'Página sem conteúdo',
+    data: previousEntry.data || 'HOJE',
+    hora: now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  };
+  diaryEntries[index] = entry;
+  const notes = readLocalJson('card-builder-notes', []).filter((note) => !(note.project === activeProject.path && note.index === index));
+  notes.push({ project: activeProject.path, index, entry, updatedAt: now.toISOString() });
   localStorage.setItem('card-builder-notes', JSON.stringify(notes));
-  setTimeout(() => showToast('Página salva', 'A anotação foi adicionada ao diário.'), 80);
+  if (activeProject.local) {
+    activeProject.diario = diaryEntries;
+    const localProjects = readLocalJson('card-builder-projects', []).map((project) => project.path === activeProject.path ? activeProject : project);
+    localStorage.setItem('card-builder-projects', JSON.stringify(localProjects));
+  }
+  renderDiary();
+  $('#diaryCount').textContent = diaryEntries.length;
+  $('#navDiaryCount').textContent = diaryEntries.length;
+  noteDialog.close();
+  showToast(editingDiaryIndex === null ? 'Página salva' : 'Página atualizada', editingDiaryIndex === null ? 'A anotação foi adicionada ao diário.' : 'As alterações foram salvas localmente.');
   form.reset();
+  editingDiaryIndex = null;
 });
 
 function showToast(title, message) {
