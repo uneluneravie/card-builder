@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Gestão de projetos, baralhos e cartas em um só lugar.">
+  <title>Casa de Cartas — Projetos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#" aria-label="Casa de Cartas, início">
+        <span class="brand-mark" aria-hidden="true"><span>♢</span></span>
+        <span>Casa de Cartas</span>
+      </a>
+
+      <button class="project-switcher" id="projectSwitcher" aria-expanded="false">
+        <span class="project-thumb">RB</span>
+        <span class="project-switcher-copy"><small>PROJETO ATUAL</small><strong>Reinos de Bruma</strong></span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="project-menu" id="projectMenu" hidden>
+        <button data-project="Reinos de Bruma">Reinos de Bruma <span>✓</span></button>
+        <button data-project="Órbita 7">Órbita 7</button>
+        <button id="newProjectFromMenu">＋ Criar projeto</button>
+      </div>
+
+      <nav class="main-nav" aria-label="Navegação principal">
+        <a href="#visao" class="active" data-view="visao"><span>⌂</span> Visão geral</a>
+        <a href="#diario" data-view="diario"><span>▤</span> Diário <b>8</b></a>
+        <a href="#baralhos" data-view="baralhos"><span>▱</span> Baralhos <b>4</b></a>
+        <a href="#arquivos" data-view="arquivos"><span>◇</span> Arquivos</a>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="storage-copy"><span>Armazenamento</span><strong>1,2 GB de 5 GB</strong></div>
+        <div class="storage-bar"><span></span></div>
+        <button class="github-button" id="githubButton"><span aria-hidden="true">◉</span><span><small>SINCRONIZAÇÃO</small><strong>GitHub conectado</strong></span><i></i></button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="icon-button menu-button" id="menuButton" aria-label="Abrir menu">☰</button>
+        <label class="global-search"><span>⌕</span><input id="globalSearch" type="search" placeholder="Buscar cartas, baralhos ou notas..." aria-label="Buscar"></label>
+        <div class="top-actions">
+          <button class="icon-button" aria-label="Ajuda">?</button>
+          <button class="icon-button notification" aria-label="Notificações">♧<i></i></button>
+          <button class="avatar" aria-label="Abrir perfil">LM</button>
+        </div>
+      </header>
+
+      <div class="page" id="visao">
+        <section class="welcome">
+          <div><p class="eyebrow">QUARTA-FEIRA, 30 DE SETEMBRO</p><h1>Olá, Lucas <span>✦</span></h1><p>Continue dando vida ao seu universo. Há <strong>12 cartas</strong> esperando por você.</p></div>
+          <button class="primary-button" id="newDeckButton"><span>＋</span> Novo baralho</button>
+        </section>
+
+        <section class="project-hero">
+          <div class="hero-art" aria-label="Ilustração abstrata de um castelo na névoa"><div class="moon"></div><div class="mountain one"></div><div class="mountain two"></div><div class="castle">♜</div></div>
+          <div class="hero-content">
+            <div class="hero-title"><div><p class="eyebrow">PROJETO ATUAL</p><h2>Reinos de Bruma</h2></div><button class="ghost-icon" aria-label="Mais opções">•••</button></div>
+            <p>Um jogo de estratégia e fantasia sobre alianças frágeis, territórios esquecidos e magia ancestral.</p>
+            <div class="hero-stats">
+              <div><span class="stat-icon purple">▱</span><p><strong>4</strong><small>Baralhos</small></p></div>
+              <div><span class="stat-icon orange">♢</span><p><strong>186</strong><small>Cartas</small></p></div>
+              <div><span class="stat-icon green">▤</span><p><strong>8</strong><small>Páginas no diário</small></p></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-block decks-section">
+          <div class="section-heading"><div><h2>Seus baralhos</h2><p>Organize e acompanhe a produção de cada conjunto.</p></div><a href="#baralhos">Ver todos <span>→</span></a></div>
+          <div class="deck-grid" id="deckGrid">
+            <article class="deck-card" data-name="Heróis do Véu">
+              <div class="deck-preview heroes"><span class="card-back back-one">✦</span><span class="card-back back-two">♜</span><span class="deck-status">Em produção</span></div>
+              <div class="deck-body"><div class="deck-title"><h3>Heróis do Véu</h3><button aria-label="Opções de Heróis do Véu">•••</button></div><p>Personagens jogáveis e seus caminhos.</p><div class="progress-label"><span>42 de 60 cartas</span><strong>70%</strong></div><div class="progress"><span style="width:70%"></span></div><div class="deck-meta"><span>◫ 63 × 88 mm</span><span>◉ 300 g/m²</span></div></div>
+            </article>
+            <article class="deck-card" data-name="Relíquias Antigas">
+              <div class="deck-preview relics"><span class="card-back back-one">◈</span><span class="card-back back-two">◆</span><span class="deck-status review">Em revisão</span></div>
+              <div class="deck-body"><div class="deck-title"><h3>Relíquias Antigas</h3><button aria-label="Opções de Relíquias Antigas">•••</button></div><p>Artefatos, tesouros e objetos encantados.</p><div class="progress-label"><span>54 de 54 cartas</span><strong>100%</strong></div><div class="progress amber"><span style="width:100%"></span></div><div class="deck-meta"><span>◫ 63 × 88 mm</span><span>◉ 330 g/m²</span></div></div>
+            </article>
+            <article class="deck-card" data-name="Terras Nebulosas">
+              <div class="deck-preview lands"><span class="card-back back-one">♧</span><span class="card-back back-two">▲</span><span class="deck-status draft">Rascunho</span></div>
+              <div class="deck-body"><div class="deck-title"><h3>Terras Nebulosas</h3><button aria-label="Opções de Terras Nebulosas">•••</button></div><p>Regiões do mapa e efeitos de território.</p><div class="progress-label"><span>18 de 48 cartas</span><strong>38%</strong></div><div class="progress teal"><span style="width:38%"></span></div><div class="deck-meta"><span>◫ 70 × 120 mm</span><span>◉ 300 g/m²</span></div></div>
+            </article>
+            <button class="add-deck-card" id="addDeckCard"><span>＋</span><strong>Criar novo baralho</strong><small>Defina formato, materiais e comece a criar.</small></button>
+          </div>
+        </section>
+
+        <section class="lower-grid">
+          <div class="section-block diary-block">
+            <div class="section-heading"><div><h2>Diário do projeto</h2><p>Suas notas e ideias mais recentes.</p></div><button class="soft-button" id="newNoteButton">＋ Nova página</button></div>
+            <div class="note-list" id="noteList">
+              <button><span class="note-icon">▤</span><span><strong>Regras de combate — v2</strong><small>Ajustes no sistema de iniciativa e ações...</small></span><time>HOJE<br><b>14:32</b></time></button>
+              <button><span class="note-icon peach">▤</span><span><strong>História dos Sete Reinos</strong><small>As origens do conflito e a primeira névoa...</small></span><time>ONTEM<br><b>18:05</b></time></button>
+              <button><span class="note-icon teal-bg">▤</span><span><strong>Ideias para a expansão</strong><small>Novas facções, criaturas marinhas e ilhas...</small></span><time>28 SET<br><b>09:17</b></time></button>
+            </div>
+          </div>
+          <div class="section-block activity-block">
+            <div class="section-heading"><div><h2>Atividade recente</h2><p>Alterações salvas no projeto.</p></div><button class="ghost-icon">•••</button></div>
+            <div class="activity-list">
+              <div><span class="activity-avatar">LM</span><p><strong>Você atualizou 6 cartas</strong><small>em Heróis do Véu · há 12 min</small></p></div>
+              <div><span class="activity-avatar amber-bg">✓</span><p><strong>Sincronização concluída</strong><small>Commit enviado ao GitHub · há 1 h</small></p></div>
+              <div><span class="activity-avatar green-bg">＋</span><p><strong>Novo arquivo adicionado</strong><small>frame-reliquia-v3.png · ontem</small></p></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <dialog id="deckDialog" class="dialog">
+    <form method="dialog" id="deckForm">
+      <div class="dialog-head"><div><p class="eyebrow">NOVO INVENTÁRIO</p><h2>Criar baralho</h2></div><button value="cancel" aria-label="Fechar">×</button></div>
+      <p class="dialog-intro">Comece pelos dados de produção. Você poderá adicionar e compor as cartas em seguida.</p>
+      <div class="form-grid">
+        <label class="full">Nome do baralho<input name="name" required placeholder="Ex.: Criaturas da Névoa"></label>
+        <label>Quantidade de cartas<input name="quantity" type="number" min="1" value="54" required></label>
+        <label>Tamanho<select name="size"><option>63 × 88 mm (poker)</option><option>57 × 89 mm (bridge)</option><option>70 × 120 mm (tarô)</option><option>Personalizado</option></select></label>
+        <label>Material<select name="material"><option>Couche fosco</option><option>Couche brilho</option><option>Linho</option><option>Papel reciclado</option></select></label>
+        <label>Espessura<select name="weight"><option>300 g/m²</option><option>310 g/m²</option><option>330 g/m²</option><option>350 g/m²</option></select></label>
+        <label>Imagem do verso<input type="file" accept="image/*"></label>
+        <label>Imagem do frame<input type="file" accept="image/*"></label>
+      </div>
+      <div class="dialog-actions"><button value="cancel" class="secondary-button">Cancelar</button><button value="default" class="primary-button" id="saveDeck">Criar baralho</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="noteDialog" class="dialog compact">
+    <form method="dialog" id="noteForm"><div class="dialog-head"><div><p class="eyebrow">DIÁRIO</p><h2>Nova página</h2></div><button value="cancel">×</button></div><label>Título<input name="title" required placeholder="Título da anotação"></label><label>Conteúdo<textarea name="content" rows="7" placeholder="Escreva livremente. Use # para títulos e - para listas."></textarea></label><div class="format-help"><span><b>#</b> Título</span><span><b>–</b> Lista</span><span><b>**</b> Destaque</span></div><div class="dialog-actions"><button value="cancel" class="secondary-button">Cancelar</button><button value="default" class="primary-button" id="saveNote">Salvar página</button></div></form>
+  </dialog>
+
+  <dialog id="githubDialog" class="dialog compact">
+    <form method="dialog"><div class="dialog-head"><div><p class="eyebrow">INTEGRAÇÃO SEGURA</p><h2>Conectar ao GitHub</h2></div><button value="cancel">×</button></div><p class="dialog-intro">Use um Personal Access Token com acesso apenas ao repositório do projeto. O token fica somente nesta sessão.</p><label>Repositório<input placeholder="organização/repositório"></label><label>Personal Access Token<input type="password" placeholder="github_pat_••••••••"></label><div class="security-note">⌾ Nunca salvamos seu token nos arquivos do projeto.</div><div class="dialog-actions"><button value="cancel" class="secondary-button">Cancelar</button><button value="default" class="primary-button">Conectar</button></div></form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"><span>✓</span><p><strong>Baralho criado</strong><small>Seu rascunho foi salvo localmente.</small></p></div>
+  <script src="app.js"></script>
+</body>
+</html>
