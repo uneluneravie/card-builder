@@ -2,6 +2,11 @@
   "nome": "Reinos de Bruma",
   "sigla": "RB",
   "descricao": "Um jogo de estratégia e fantasia sobre alianças frágeis, territórios esquecidos e magia ancestral.",
-  "paginasDiario": 8,
-  "baralhos": ["herois-do-veu.json", "reliquias-antigas.json", "terras-nebulosas.json"]
+  "baralhos": [
+    "herois-do-veu.json",
+    "reliquias-antigas.json",
+    "terras-nebulosas.json"
+  ],
+  "diario": "diario/paginas.json",
+  "atividades": "atividades.json"
 }

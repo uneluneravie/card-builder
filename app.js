@@ -5,6 +5,8 @@ const projectSwitcher = $('#projectSwitcher');
 const projectMenu = $('#projectMenu');
 const deckDialog = $('#deckDialog');
 const noteDialog = $('#noteDialog');
+const projectDialog = $('#projectDialog');
+const deleteProjectDialog = $('#deleteProjectDialog');
 const toast = $('#toast');
 let projects = [];
 let activeProject = null;
@@ -24,11 +26,14 @@ async function loadProjects() {
     const response = await fetch('projetos/index.json');
     if (!response.ok) throw new Error('Não foi possível abrir o índice de projetos.');
     const index = await response.json();
-    projects = await Promise.all(index.projetos.map(async (path) => {
+    const fileProjects = await Promise.all(index.projetos.map(async (path) => {
       const projectResponse = await fetch(`projetos/${path}/projeto.json`);
       if (!projectResponse.ok) throw new Error(`Não foi possível abrir o projeto ${path}.`);
       return { ...(await projectResponse.json()), path };
     }));
+    const localProjects = readLocalJson('card-builder-projects', []);
+    const deletedProjects = readLocalJson('card-builder-deleted-projects', []);
+    projects = [...fileProjects.filter((project) => !deletedProjects.includes(project.path)), ...localProjects];
     renderProjects();
     renderProjectMenu();
   } catch (error) {
@@ -37,18 +42,23 @@ async function loadProjects() {
 }
 
 function renderProjects() {
-  $('#projectGrid').innerHTML = projects.map((project) => `
+  $('#projectGrid').innerHTML = projects.length ? projects.map((project) => `
     <button class="project-card" data-project-path="${escapeHtml(project.path)}">
-      <span class="project-card-art" aria-hidden="true">${escapeHtml(project.sigla)}</span>
+      <span class="project-card-art" ${project.imagem ? `style="background-image:url('${escapeHtml(project.imagem)}')"` : ''} aria-hidden="true">${project.imagem ? '' : escapeHtml(project.sigla)}</span>
       <span class="project-card-copy"><small>PROJETO</small><strong>${escapeHtml(project.nome)}</strong><span>${escapeHtml(project.descricao)}</span></span>
       <span class="project-card-arrow" aria-hidden="true">→</span>
-    </button>`).join('');
+    </button>`).join('') : '<p class="loading-state">Nenhum projeto por aqui. Crie o primeiro para começar.</p>';
   $$('[data-project-path]').forEach((button) => button.addEventListener('click', () => openProject(button.dataset.projectPath)));
 }
 
 function renderProjectMenu() {
   projectMenu.innerHTML = `${projects.map((project) => `<button data-menu-project="${escapeHtml(project.path)}">${escapeHtml(project.nome)}</button>`).join('')}<button id="newProjectFromMenu">＋ Criar projeto</button>`;
   $$('[data-menu-project]').forEach((button) => button.addEventListener('click', () => openProject(button.dataset.menuProject)));
+  $('#newProjectFromMenu').addEventListener('click', () => {
+    projectMenu.hidden = true;
+    projectSwitcher.setAttribute('aria-expanded', 'false');
+    projectDialog.showModal();
+  });
 }
 
 async function openProject(path) {
@@ -65,23 +75,60 @@ async function openProject(path) {
   $('#projectPageTitle').textContent = project.nome;
   $('#heroProjectName').textContent = project.nome;
   $('#heroProjectDescription').textContent = project.descricao;
-  $('#diaryCount').textContent = project.paginasDiario;
+  $('#diaryCount').textContent = '0';
   $('#deckGrid').innerHTML = '<p class="loading-state">Carregando baralhos…</p>';
 
   try {
-    const decks = await Promise.all(project.baralhos.map(async (file) => {
+    const decks = project.local ? project.baralhos : await Promise.all(project.baralhos.map(async (file) => {
       const response = await fetch(`projetos/${path}/baralhos/${file}`);
       if (!response.ok) throw new Error(`Não foi possível abrir ${file}.`);
       return response.json();
     }));
+    const [diary, activities] = project.local
+      ? [project.diario, project.atividades]
+      : await Promise.all([
+        loadJson(`projetos/${path}/${project.diario}`),
+        loadJson(`projetos/${path}/${project.atividades}`)
+      ]);
     renderDecks(decks);
+    renderDiary(diary);
+    renderActivities(activities);
     $('#deckCount').textContent = decks.length;
     $('#cardCount').textContent = decks.reduce((total, deck) => total + deck.quantidade, 0);
+    $('#diaryCount').textContent = diary.length;
+    $('#navDeckCount').textContent = decks.length;
+    $('#navDiaryCount').textContent = diary.length;
     history.replaceState(null, '', `#projeto/${path}`);
     showToast('Projeto carregado', `${project.nome} está pronto para editar.`);
   } catch (error) {
     $('#deckGrid').innerHTML = `<p class="error-state">${escapeHtml(error.message)}</p>`;
   }
+}
+
+async function loadJson(path) {
+  const response = await fetch(path);
+  if (!response.ok) throw new Error(`Não foi possível abrir ${path}.`);
+  return response.json();
+}
+
+function readLocalJson(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key)) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function renderDiary(entries) {
+  $('#noteList').innerHTML = entries.length ? entries.slice(0, 3).map((entry, index) => `
+    <button><span class="note-icon ${['', 'peach', 'teal-bg'][index]}">▤</span><span><strong>${escapeHtml(entry.titulo)}</strong><small>${escapeHtml(entry.resumo)}</small></span><time>${escapeHtml(entry.data)}<br><b>${escapeHtml(entry.hora)}</b></time></button>
+  `).join('') : '<p class="empty-state">O diário ainda não tem páginas.</p>';
+}
+
+function renderActivities(entries) {
+  $('#activityList').innerHTML = entries.length ? entries.map((entry) => `
+    <div><span class="activity-avatar ${escapeHtml(entry.estilo || '')}">${escapeHtml(entry.icone)}</span><p><strong>${escapeHtml(entry.titulo)}</strong><small>${escapeHtml(entry.detalhe)}</small></p></div>
+  `).join('') : '<p class="empty-state">Nenhuma atividade recente.</p>';
 }
 
 function renderDecks(decks) {
@@ -101,6 +148,10 @@ function renderDecks(decks) {
 
 function showHome() {
   activeProject = null;
+  $('.project-switcher-copy strong').textContent = 'Selecione um projeto';
+  $('.project-thumb').textContent = '—';
+  $('#navDeckCount').textContent = '0';
+  $('#navDiaryCount').textContent = '0';
   $('#homeWelcome').hidden = false;
   $('#projectsSection').hidden = false;
   $('#projectPage').hidden = true;
@@ -109,6 +160,7 @@ function showHome() {
 
 $('#backToProjects').addEventListener('click', showHome);
 $('#newDeckButton').addEventListener('click', () => deckDialog.showModal());
+$('#newProjectButton').addEventListener('click', () => projectDialog.showModal());
 $('#newNoteButton').addEventListener('click', () => noteDialog.showModal());
 $('#githubButton').addEventListener('click', () => $('#githubDialog').showModal());
 $('#menuButton').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
@@ -129,16 +181,86 @@ $('#globalSearch').addEventListener('input', (event) => {
   }
 });
 
-$('#saveDeck').addEventListener('click', (event) => {
+$('#deckForm').addEventListener('submit', (event) => {
+  event.preventDefault();
   const form = $('#deckForm');
-  if (!form.reportValidity()) { event.preventDefault(); return; }
+  if (!form.reportValidity()) return;
   const data = new FormData(form);
   const drafts = JSON.parse(localStorage.getItem('card-builder-decks') || '[]');
   drafts.push({ project: activeProject?.path, name: data.get('name'), quantity: data.get('quantity'), size: data.get('size'), material: data.get('material'), weight: data.get('weight'), createdAt: new Date().toISOString() });
   localStorage.setItem('card-builder-decks', JSON.stringify(drafts));
-  setTimeout(() => showToast('Baralho criado', `${data.get('name')} foi salvo como rascunho local.`), 80);
+  deckDialog.close();
+  showToast('Baralho criado', `${data.get('name')} foi salvo como rascunho local.`);
   form.reset();
 });
+
+$('#projectForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  if (!form.reportValidity()) return;
+  const data = new FormData(form);
+  const name = data.get('name').trim();
+  const file = data.get('image');
+  const project = {
+    nome: name,
+    sigla: name.split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toLocaleUpperCase('pt-BR'),
+    descricao: data.get('description').trim(),
+    imagem: file?.size ? await fileToDataUrl(file) : '',
+    path: `local-${Date.now()}`,
+    local: true,
+    baralhos: [],
+    diario: [],
+    atividades: []
+  };
+  const localProjects = readLocalJson('card-builder-projects', []);
+  localProjects.push(project);
+  localStorage.setItem('card-builder-projects', JSON.stringify(localProjects));
+  projects.push(project);
+  renderProjects();
+  renderProjectMenu();
+  projectDialog.close();
+  form.reset();
+  await openProject(project.path);
+  showToast('Projeto criado', `${name} foi salvo como rascunho local.`);
+});
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+$('#deleteProjectButton').addEventListener('click', () => {
+  $('#deleteProjectName').textContent = activeProject.nome;
+  deleteProjectDialog.showModal();
+});
+
+$('#deleteProjectForm').addEventListener('submit', (event) => {
+  event.preventDefault();
+  if (!activeProject) return;
+  const deletedName = activeProject.nome;
+  if (activeProject.local) {
+    const localProjects = readLocalJson('card-builder-projects', []).filter((project) => project.path !== activeProject.path);
+    localStorage.setItem('card-builder-projects', JSON.stringify(localProjects));
+  } else {
+    const deletedProjects = readLocalJson('card-builder-deleted-projects', []);
+    if (!deletedProjects.includes(activeProject.path)) deletedProjects.push(activeProject.path);
+    localStorage.setItem('card-builder-deleted-projects', JSON.stringify(deletedProjects));
+  }
+  projects = projects.filter((project) => project.path !== activeProject.path);
+  deleteProjectDialog.close();
+  renderProjects();
+  renderProjectMenu();
+  showHome();
+  showToast('Projeto excluído', `${deletedName} foi removido deste navegador.`);
+});
+
+$$('[data-close-dialog]').forEach((button) => button.addEventListener('click', () => {
+  button.closest('dialog').close('cancel');
+}));
 
 $('#saveNote').addEventListener('click', (event) => {
   const form = $('#noteForm');
