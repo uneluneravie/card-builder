@@ -19,8 +19,8 @@
       </a>
 
       <button class="project-switcher" id="projectSwitcher" aria-expanded="false">
-        <span class="project-thumb">RB</span>
-        <span class="project-switcher-copy"><small>PROJETO ATUAL</small><strong>Reinos de Bruma</strong></span>
+        <span class="project-thumb">—</span>
+        <span class="project-switcher-copy"><small>PROJETO ATUAL</small><strong>Selecione um projeto</strong></span>
         <span class="chevron">⌄</span>
       </button>
       <div class="project-menu" id="projectMenu" hidden>
@@ -31,8 +31,8 @@
 
       <nav class="main-nav" aria-label="Navegação principal">
         <a href="#visao" class="active" data-view="visao"><span>⌂</span> Visão geral</a>
-        <a href="#diario" data-view="diario"><span>▤</span> Diário <b>8</b></a>
-        <a href="#baralhos" data-view="baralhos"><span>▱</span> Baralhos <b>4</b></a>
+        <a href="#diario" data-view="diario"><span>▤</span> Diário <b id="navDiaryCount">0</b></a>
+        <a href="#baralhos" data-view="baralhos"><span>▱</span> Baralhos <b id="navDeckCount">0</b></a>
         <a href="#arquivos" data-view="arquivos"><span>◇</span> Arquivos</a>
       </nav>
 
@@ -57,6 +57,7 @@
       <div class="page" id="visao">
         <section class="welcome home-welcome" id="homeWelcome">
           <div><p class="eyebrow">SEUS UNIVERSOS</p><h1>Projetos</h1><p>Escolha um projeto para acessar seus baralhos, cartas e anotações.</p></div>
+          <button class="primary-button" id="newProjectButton"><span>＋</span> Criar projeto</button>
         </section>
 
         <section id="projectsSection" aria-labelledby="projectsTitle">
@@ -71,7 +72,7 @@
         </section>
 
         <section class="project-hero">
-          <div class="hero-art" aria-label="Ilustração abstrata de um castelo na névoa"><div class="moon"></div><div class="mountain one"></div><div class="mountain two"></div><div class="castle">♜</div></div>
+          <div class="hero-art" aria-label="Ilustração abstrata do projeto"><div class="moon"></div><div class="mountain one"></div><div class="mountain two"></div><div class="castle">♜</div></div>
           <div class="hero-content">
             <div class="hero-title"><div><p class="eyebrow">PROJETO ATUAL</p><h2 id="heroProjectName"></h2></div><button class="ghost-icon" aria-label="Mais opções">•••</button></div>
             <p id="heroProjectDescription"></p>
@@ -92,19 +93,17 @@
           <div class="section-block diary-block">
             <div class="section-heading"><div><h2>Diário do projeto</h2><p>Suas notas e ideias mais recentes.</p></div><button class="soft-button" id="newNoteButton">＋ Nova página</button></div>
             <div class="note-list" id="noteList">
-              <button><span class="note-icon">▤</span><span><strong>Regras de combate — v2</strong><small>Ajustes no sistema de iniciativa e ações...</small></span><time>HOJE<br><b>14:32</b></time></button>
-              <button><span class="note-icon peach">▤</span><span><strong>História dos Sete Reinos</strong><small>As origens do conflito e a primeira névoa...</small></span><time>ONTEM<br><b>18:05</b></time></button>
-              <button><span class="note-icon teal-bg">▤</span><span><strong>Ideias para a expansão</strong><small>Novas facções, criaturas marinhas e ilhas...</small></span><time>28 SET<br><b>09:17</b></time></button>
+              <p class="loading-state">Carregando diário…</p>
             </div>
           </div>
           <div class="section-block activity-block">
             <div class="section-heading"><div><h2>Atividade recente</h2><p>Alterações salvas no projeto.</p></div><button class="ghost-icon">•••</button></div>
-            <div class="activity-list">
-              <div><span class="activity-avatar">LM</span><p><strong>Você atualizou 6 cartas</strong><small>em Heróis do Véu · há 12 min</small></p></div>
-              <div><span class="activity-avatar amber-bg">✓</span><p><strong>Sincronização concluída</strong><small>Commit enviado ao GitHub · há 1 h</small></p></div>
-              <div><span class="activity-avatar green-bg">＋</span><p><strong>Novo arquivo adicionado</strong><small>frame-reliquia-v3.png · ontem</small></p></div>
-            </div>
+            <div class="activity-list" id="activityList"><p class="loading-state">Carregando atividades…</p></div>
           </div>
+        </section>
+        <section class="danger-zone" aria-labelledby="deleteProjectTitle">
+          <div><h2 id="deleteProjectTitle">Excluir projeto</h2><p>Remove este projeto da lista neste navegador.</p></div>
+          <button class="danger-button" id="deleteProjectButton">Excluir projeto</button>
         </section>
         </div>
       </div>
@@ -113,7 +112,7 @@
 
   <dialog id="deckDialog" class="dialog">
     <form method="dialog" id="deckForm">
-      <div class="dialog-head"><div><p class="eyebrow">NOVO INVENTÁRIO</p><h2>Criar baralho</h2></div><button value="cancel" aria-label="Fechar">×</button></div>
+      <div class="dialog-head"><div><p class="eyebrow">NOVO INVENTÁRIO</p><h2>Criar baralho</h2></div><button type="button" data-close-dialog aria-label="Fechar">×</button></div>
       <p class="dialog-intro">Comece pelos dados de produção. Você poderá adicionar e compor as cartas em seguida.</p>
       <div class="form-grid">
         <label class="full">Nome do baralho<input name="name" required placeholder="Ex.: Criaturas da Névoa"></label>
@@ -124,12 +123,31 @@
         <label>Imagem do verso<input type="file" accept="image/*"></label>
         <label>Imagem do frame<input type="file" accept="image/*"></label>
       </div>
-      <div class="dialog-actions"><button value="cancel" class="secondary-button">Cancelar</button><button value="default" class="primary-button" id="saveDeck">Criar baralho</button></div>
+      <div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button" id="saveDeck">Criar baralho</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="projectDialog" class="dialog compact">
+    <form id="projectForm">
+      <div class="dialog-head"><div><p class="eyebrow">NOVO UNIVERSO</p><h2>Criar projeto</h2></div><button type="button" data-close-dialog aria-label="Fechar">×</button></div>
+      <p class="dialog-intro">Crie um rascunho local. Os dados são armazenados em formato JSON no navegador.</p>
+      <label>Nome do projeto<input name="name" required placeholder="Ex.: Crônicas do Norte"></label>
+      <label>Descrição curta<textarea name="description" required rows="3" placeholder="Sobre o que é este jogo?"></textarea></label>
+      <label>Imagem do projeto<input name="image" type="file" accept="image/*"></label>
+      <div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button">Criar projeto</button></div>
     </form>
   </dialog>
 
   <dialog id="noteDialog" class="dialog compact">
-    <form method="dialog" id="noteForm"><div class="dialog-head"><div><p class="eyebrow">DIÁRIO</p><h2>Nova página</h2></div><button value="cancel">×</button></div><label>Título<input name="title" required placeholder="Título da anotação"></label><label>Conteúdo<textarea name="content" rows="7" placeholder="Escreva livremente. Use # para títulos e - para listas."></textarea></label><div class="format-help"><span><b>#</b> Título</span><span><b>–</b> Lista</span><span><b>**</b> Destaque</span></div><div class="dialog-actions"><button value="cancel" class="secondary-button">Cancelar</button><button value="default" class="primary-button" id="saveNote">Salvar página</button></div></form>
+    <form method="dialog" id="noteForm"><div class="dialog-head"><div><p class="eyebrow">DIÁRIO</p><h2>Nova página</h2></div><button type="button" data-close-dialog>×</button></div><label>Título<input name="title" required placeholder="Título da anotação"></label><label>Conteúdo<textarea name="content" rows="7" placeholder="Escreva livremente. Use # para títulos e - para listas."></textarea></label><div class="format-help"><span><b>#</b> Título</span><span><b>–</b> Lista</span><span><b>**</b> Destaque</span></div><div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button value="default" class="primary-button" id="saveNote">Salvar página</button></div></form>
+  </dialog>
+
+  <dialog id="deleteProjectDialog" class="dialog compact">
+    <form id="deleteProjectForm">
+      <div class="dialog-head"><div><p class="eyebrow danger-copy">AÇÃO DESTRUTIVA</p><h2>Excluir projeto?</h2></div><button type="button" data-close-dialog aria-label="Fechar">×</button></div>
+      <p class="dialog-intro">O projeto <strong id="deleteProjectName"></strong> será removido da lista neste navegador. Esta ação pode ser revertida limpando os dados locais.</p>
+      <div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="danger-button">Sim, excluir projeto</button></div>
+    </form>
   </dialog>
 
   <dialog id="githubDialog" class="dialog compact">
