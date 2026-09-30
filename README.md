@@ -10,6 +10,19 @@ python3 -m http.server 4173
 
 Abra `http://localhost:4173`.
 
+## Estrutura dos projetos
+
+Os projetos disponíveis são declarados em `projetos/index.json`. Cada item aponta para uma subpasta com os metadados em `projeto.json` e um diretório `baralhos/`, que mantém um arquivo JSON independente para cada baralho. A aplicação só solicita esses arquivos de baralho depois que o usuário abre o projeto correspondente.
+
+```text
+projetos/
+├── index.json
+└── nome-do-projeto/
+    ├── projeto.json
+    └── baralhos/
+        └── nome-do-baralho.json
+```
+
 ## Decisão sobre a composição das cartas
 
 A primeira versão deve compor título, texto e imagem em HTML/CSS. Isso mantém o conteúdo acessível, responsivo, serializável e fácil de editar, além de permitir uma futura exportação para bitmap ou PDF com uma biblioteca de captura. Uma ferramenta gráfica embarcada só passa a compensar caso o produto exija posicionamento livre, máscaras complexas ou edição de imagem destrutiva.
