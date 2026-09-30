@@ -55,41 +55,37 @@
       </header>
 
       <div class="page" id="visao">
+        <section class="welcome home-welcome" id="homeWelcome">
+          <div><p class="eyebrow">SEUS UNIVERSOS</p><h1>Projetos</h1><p>Escolha um projeto para acessar seus baralhos, cartas e anotações.</p></div>
+        </section>
+
+        <section id="projectsSection" aria-labelledby="projectsTitle">
+          <div class="section-heading"><div><h2 id="projectsTitle">Todos os projetos</h2><p>Os projetos são carregados diretamente dos arquivos JSON.</p></div></div>
+          <div class="project-grid" id="projectGrid" aria-live="polite"><p class="loading-state">Carregando projetos…</p></div>
+        </section>
+
+        <div id="projectPage" hidden>
         <section class="welcome">
-          <div><p class="eyebrow">QUARTA-FEIRA, 30 DE SETEMBRO</p><h1>Olá, Lucas <span>✦</span></h1><p>Continue dando vida ao seu universo. Há <strong>12 cartas</strong> esperando por você.</p></div>
+          <div><button class="back-button" id="backToProjects">← Todos os projetos</button><h1 id="projectPageTitle">Projeto</h1><p id="projectWelcome">Continue dando vida ao seu universo.</p></div>
           <button class="primary-button" id="newDeckButton"><span>＋</span> Novo baralho</button>
         </section>
 
         <section class="project-hero">
           <div class="hero-art" aria-label="Ilustração abstrata de um castelo na névoa"><div class="moon"></div><div class="mountain one"></div><div class="mountain two"></div><div class="castle">♜</div></div>
           <div class="hero-content">
-            <div class="hero-title"><div><p class="eyebrow">PROJETO ATUAL</p><h2>Reinos de Bruma</h2></div><button class="ghost-icon" aria-label="Mais opções">•••</button></div>
-            <p>Um jogo de estratégia e fantasia sobre alianças frágeis, territórios esquecidos e magia ancestral.</p>
+            <div class="hero-title"><div><p class="eyebrow">PROJETO ATUAL</p><h2 id="heroProjectName"></h2></div><button class="ghost-icon" aria-label="Mais opções">•••</button></div>
+            <p id="heroProjectDescription"></p>
             <div class="hero-stats">
-              <div><span class="stat-icon purple">▱</span><p><strong>4</strong><small>Baralhos</small></p></div>
-              <div><span class="stat-icon orange">♢</span><p><strong>186</strong><small>Cartas</small></p></div>
-              <div><span class="stat-icon green">▤</span><p><strong>8</strong><small>Páginas no diário</small></p></div>
+              <div><span class="stat-icon purple">▱</span><p><strong id="deckCount">0</strong><small>Baralhos</small></p></div>
+              <div><span class="stat-icon orange">♢</span><p><strong id="cardCount">0</strong><small>Cartas</small></p></div>
+              <div><span class="stat-icon green">▤</span><p><strong id="diaryCount">0</strong><small>Páginas no diário</small></p></div>
             </div>
           </div>
         </section>
 
         <section class="section-block decks-section">
           <div class="section-heading"><div><h2>Seus baralhos</h2><p>Organize e acompanhe a produção de cada conjunto.</p></div><a href="#baralhos">Ver todos <span>→</span></a></div>
-          <div class="deck-grid" id="deckGrid">
-            <article class="deck-card" data-name="Heróis do Véu">
-              <div class="deck-preview heroes"><span class="card-back back-one">✦</span><span class="card-back back-two">♜</span><span class="deck-status">Em produção</span></div>
-              <div class="deck-body"><div class="deck-title"><h3>Heróis do Véu</h3><button aria-label="Opções de Heróis do Véu">•••</button></div><p>Personagens jogáveis e seus caminhos.</p><div class="progress-label"><span>42 de 60 cartas</span><strong>70%</strong></div><div class="progress"><span style="width:70%"></span></div><div class="deck-meta"><span>◫ 63 × 88 mm</span><span>◉ 300 g/m²</span></div></div>
-            </article>
-            <article class="deck-card" data-name="Relíquias Antigas">
-              <div class="deck-preview relics"><span class="card-back back-one">◈</span><span class="card-back back-two">◆</span><span class="deck-status review">Em revisão</span></div>
-              <div class="deck-body"><div class="deck-title"><h3>Relíquias Antigas</h3><button aria-label="Opções de Relíquias Antigas">•••</button></div><p>Artefatos, tesouros e objetos encantados.</p><div class="progress-label"><span>54 de 54 cartas</span><strong>100%</strong></div><div class="progress amber"><span style="width:100%"></span></div><div class="deck-meta"><span>◫ 63 × 88 mm</span><span>◉ 330 g/m²</span></div></div>
-            </article>
-            <article class="deck-card" data-name="Terras Nebulosas">
-              <div class="deck-preview lands"><span class="card-back back-one">♧</span><span class="card-back back-two">▲</span><span class="deck-status draft">Rascunho</span></div>
-              <div class="deck-body"><div class="deck-title"><h3>Terras Nebulosas</h3><button aria-label="Opções de Terras Nebulosas">•••</button></div><p>Regiões do mapa e efeitos de território.</p><div class="progress-label"><span>18 de 48 cartas</span><strong>38%</strong></div><div class="progress teal"><span style="width:38%"></span></div><div class="deck-meta"><span>◫ 70 × 120 mm</span><span>◉ 300 g/m²</span></div></div>
-            </article>
-            <button class="add-deck-card" id="addDeckCard"><span>＋</span><strong>Criar novo baralho</strong><small>Defina formato, materiais e comece a criar.</small></button>
-          </div>
+          <div class="deck-grid" id="deckGrid"></div>
         </section>
 
         <section class="lower-grid">
@@ -110,6 +106,7 @@
             </div>
           </div>
         </section>
+        </div>
       </div>
     </main>
   </div>
