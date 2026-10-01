@@ -18,6 +18,126 @@ let activeDecks = [];
 let editingDeckIndex = null;
 let viewingDeckIndex = null;
 let githubConnection = null;
+let syncInterval = null;
+let nextSyncAt = null;
+let lastSyncedSnapshot = null;
+let syncInProgress = false;
+let changeRevision = 0;
+const SYNC_SECONDS = 60;
+const SYNC_FILE = '.card-builder/autosave.json';
+
+function collectFormDrafts() {
+  return ['projectForm', 'deckForm', 'noteForm'].reduce((drafts, formId) => {
+    const form = document.getElementById(formId);
+    drafts[formId] = [...form.elements].filter((field) => field.name).reduce((fields, field) => {
+      fields[field.name] = field.type === 'file'
+        ? [...field.files].map((file) => ({ name: file.name, size: file.size, lastModified: file.lastModified }))
+        : field.value;
+      return fields;
+    }, {});
+    return drafts;
+  }, {});
+}
+
+function buildSyncSnapshot() {
+  const localData = {};
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (key?.startsWith('card-builder-')) localData[key] = readLocalJson(key, localStorage.getItem(key));
+  }
+  return JSON.stringify({ version: 1, localData, drafts: collectFormDrafts() }, null, 2);
+}
+
+function githubHeaders() {
+  return {
+    Accept: 'application/vnd.github+json',
+    Authorization: `Bearer ${githubConnection.token}`,
+    'X-GitHub-Api-Version': '2022-11-28'
+  };
+}
+
+function syncApiUrl() {
+  const [owner, repository] = githubConnection.repository.split('/');
+  return `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/contents/${SYNC_FILE.split('/').map(encodeURIComponent).join('/')}`;
+}
+
+function restartSyncTimer() {
+  clearInterval(syncInterval);
+  if (!githubConnection) {
+    nextSyncAt = null;
+    $('#syncCountdown').hidden = true;
+    return;
+  }
+  nextSyncAt = Date.now() + SYNC_SECONDS * 1000;
+  $('#syncCountdown').hidden = false;
+  updateSyncCountdown();
+  syncInterval = setInterval(() => {
+    updateSyncCountdown();
+    if (Date.now() >= nextSyncAt) void syncWithGithub();
+  }, 1000);
+}
+
+function updateSyncCountdown() {
+  if (!githubConnection || !nextSyncAt) return;
+  const seconds = Math.max(0, Math.ceil((nextSyncAt - Date.now()) / 1000));
+  $('#syncCountdown').textContent = `Próximo sync em ${seconds}s`;
+}
+
+async function syncWithGithub({ force = false } = {}) {
+  if (!githubConnection || syncInProgress) return;
+  const snapshot = buildSyncSnapshot();
+  if (!force && snapshot === lastSyncedSnapshot) {
+    restartSyncTimer();
+    return;
+  }
+
+  syncInProgress = true;
+  const revisionAtStart = changeRevision;
+  const status = $('#saveStatus');
+  status.className = 'save-status syncing';
+  status.querySelector('strong').textContent = 'Sincronizando com o GitHub…';
+  try {
+    const fileResponse = await fetch(syncApiUrl(), { headers: githubHeaders() });
+    if (!fileResponse.ok && fileResponse.status !== 404) throw new Error(`Não foi possível consultar o arquivo de sync (${fileResponse.status}).`);
+    const existingFile = fileResponse.ok ? await fileResponse.json() : null;
+    const content = btoa(unescape(encodeURIComponent(snapshot)));
+    const response = await fetch(syncApiUrl(), {
+      method: 'PUT',
+      headers: { ...githubHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: 'chore: sincronizar rascunhos do Card Builder',
+        content,
+        ...(existingFile?.sha ? { sha: existingFile.sha } : {})
+      })
+    });
+    if (!response.ok) {
+      const details = await response.json().catch(() => ({}));
+      throw new Error(details.message || `O GitHub recusou o sync (${response.status}).`);
+    }
+    lastSyncedSnapshot = snapshot;
+    const syncedAt = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    status.className = 'save-status';
+    status.querySelector('strong').textContent = 'GitHub sincronizado';
+    status.querySelector('small').textContent = `Último sync às ${syncedAt}.`;
+    if (changeRevision !== revisionAtStart) status.querySelector('small').textContent += ' Há novas alterações pendentes.';
+  } catch (error) {
+    status.className = 'save-status sync-error';
+    status.querySelector('strong').textContent = 'Falha no sync';
+    status.querySelector('small').textContent = error instanceof TypeError ? 'Sem acesso ao GitHub. Tentaremos novamente.' : error.message;
+  } finally {
+    syncInProgress = false;
+    restartSyncTimer();
+  }
+}
+
+function registerChange() {
+  changeRevision += 1;
+}
+
+function syncCompletedSave() {
+  registerChange();
+  if (githubConnection) void syncWithGithub({ force: true });
+}
 
 projectSwitcher.addEventListener('click', () => {
   const willOpen = projectMenu.hidden;
@@ -330,6 +450,8 @@ $('#githubForm').addEventListener('submit', async (event) => {
 
     const repositoryData = await response.json();
     githubConnection = { repository: repositoryData.full_name, token };
+    lastSyncedSnapshot = null;
+    restartSyncTimer();
     updateGithubButton();
     feedback.textContent = `Conectado a ${repositoryData.full_name}.`;
     feedback.className = 'connection-feedback success';
@@ -351,6 +473,8 @@ $('#githubForm').addEventListener('submit', async (event) => {
 
 $('#disconnectGithub').addEventListener('click', () => {
   githubConnection = null;
+  lastSyncedSnapshot = null;
+  restartSyncTimer();
   updateGithubButton();
   $('#githubForm').reset();
   $('#githubFeedback').textContent = 'Conexão encerrada. O token foi removido da memória desta aba.';
@@ -411,6 +535,7 @@ $('#deckForm').addEventListener('submit', async (event) => {
     localStorage.setItem('card-builder-projects', JSON.stringify(localProjects));
   }
   markLocalSave();
+  syncCompletedSave();
   renderDecks(activeDecks);
   $('#deckCount').textContent = activeDecks.length;
   $('#cardCount').textContent = activeDecks.reduce((total, item) => total + item.quantidade, 0);
@@ -442,6 +567,7 @@ $('#projectForm').addEventListener('submit', async (event) => {
   localProjects.push(project);
   localStorage.setItem('card-builder-projects', JSON.stringify(localProjects));
   markLocalSave();
+  syncCompletedSave();
   projects.push(project);
   renderProjects();
   renderProjectMenu();
@@ -479,6 +605,7 @@ $('#deleteProjectForm').addEventListener('submit', (event) => {
   }
   projects = projects.filter((project) => project.path !== activeProject.path);
   markLocalSave();
+  syncCompletedSave();
   deleteProjectDialog.close();
   renderProjects();
   renderProjectMenu();
@@ -516,6 +643,7 @@ $('#noteForm').addEventListener('submit', (event) => {
     localStorage.setItem('card-builder-projects', JSON.stringify(localProjects));
   }
   markLocalSave();
+  syncCompletedSave();
   renderDiary();
   $('#diaryCount').textContent = diaryEntries.length;
   $('#navDiaryCount').textContent = diaryEntries.length;
@@ -540,6 +668,11 @@ function markLocalSave() {
   status.querySelector('strong').textContent = 'Alterações salvas';
   status.querySelector('small').textContent = `Salvo neste navegador às ${savedAt}.`;
 }
+
+['projectForm', 'deckForm', 'noteForm'].forEach((formId) => {
+  document.getElementById(formId).addEventListener('input', registerChange);
+  document.getElementById(formId).addEventListener('change', registerChange);
+});
 
 document.addEventListener('click', (event) => {
   if (!projectSwitcher.contains(event.target) && !projectMenu.contains(event.target)) {
