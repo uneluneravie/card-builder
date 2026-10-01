@@ -157,7 +157,7 @@ const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (character)
 async function loadProjects() {
   try {
     const index = githubConnection
-      ? await loadGithubJson('projetos/index.json')
+      ? await loadGithubJson('projetos/index.json', { projetos: [] })
       : await loadJson('projetos/index.json');
     const fileProjects = await Promise.all(index.projetos.map(async (path) => {
       const project = githubConnection
@@ -174,8 +174,9 @@ async function loadProjects() {
   }
 }
 
-async function loadGithubJson(path) {
+async function loadGithubJson(path, notFoundFallback) {
   const response = await fetch(syncApiUrl(path), { headers: githubHeaders() });
+  if (response.status === 404 && arguments.length > 1) return notFoundFallback;
   if (!response.ok) throw new Error(`Não foi possível carregar ${path} do GitHub (${response.status}).`);
   const file = await response.json();
   if (!file.content) throw new Error(`${path} não é um arquivo JSON válido no GitHub.`);
