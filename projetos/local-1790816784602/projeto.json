@@ -2,7 +2,8 @@
   "nome": "Save the prince, defeat the princess",
   "sigla": "ST",
   "descricao": "RPG Live",
-  "imagem": "",
-  "baralhos": [],
+  "baralhos": [
+    "vila-rainha-isabel-i-a-catolica.json"
+  ],
   "diario": "diario/paginas.json"
 }
