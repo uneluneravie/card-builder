@@ -23,8 +23,18 @@ let githubConnection = null;
 let syncInterval = null;
 let nextSyncAt = null;
 let syncInProgress = false;
+let lastSyncError = '';
+let lastSyncedAt = '';
 const pendingGithubFiles = new Map();
 const SYNC_SECONDS = 60;
+const DATA_RESET_VERSION = '2026-10-01';
+
+function resetLegacyProjectsOnce() {
+  if (localStorage.getItem('card-builder-reset-version') === DATA_RESET_VERSION) return;
+  ['card-builder-projects', 'card-builder-deleted-projects', 'card-builder-decks', 'card-builder-notes']
+    .forEach((key) => localStorage.removeItem(key));
+  localStorage.setItem('card-builder-reset-version', DATA_RESET_VERSION);
+}
 
 function githubHeaders() {
   return {
@@ -42,12 +52,42 @@ function restartSyncTimer() {
   clearInterval(syncInterval);
   if (!githubConnection) {
     nextSyncAt = null;
+    updateSyncStatus('local');
     return;
   }
   nextSyncAt = Date.now() + SYNC_SECONDS * 1000;
+  updateSyncCountdown();
   syncInterval = setInterval(() => {
+    updateSyncCountdown();
     if (Date.now() >= nextSyncAt) void syncWithGithub();
   }, 1000);
+}
+
+function updateSyncStatus(state, detail = '') {
+  const status = $('#saveStatus');
+  status.className = `save-status${state === 'local' || state === 'connected' ? '' : ` ${state}`}`;
+  const copy = {
+    local: ['Rascunhos salvos localmente', 'Conecte o GitHub para ativar o autosave.'],
+    connected: ['Autosave do GitHub ativo', detail],
+    syncing: ['Sincronizando com o GitHub…', detail || 'Enviando alterações pendentes.'],
+    'sync-error': ['Falha no autosave', detail]
+  }[state];
+  status.querySelector('strong').textContent = copy[0];
+  $('#syncCountdown').textContent = copy[1];
+}
+
+function updateSyncCountdown() {
+  if (!githubConnection || !nextSyncAt || syncInProgress) return;
+  const seconds = Math.max(0, Math.ceil((nextSyncAt - Date.now()) / 1000));
+  if (lastSyncError) {
+    updateSyncStatus('sync-error', `${lastSyncError} Nova tentativa em ${seconds}s.`);
+    return;
+  }
+  const pending = pendingGithubFiles.size
+    ? `${pendingGithubFiles.size} ${pendingGithubFiles.size === 1 ? 'arquivo pendente' : 'arquivos pendentes'} · `
+    : '';
+  const lastSync = lastSyncedAt ? `Último envio às ${lastSyncedAt} · ` : '';
+  updateSyncStatus('connected', `${pending}${lastSync}próxima verificação em ${seconds}s.`);
 }
 
 async function syncWithGithub() {
@@ -58,8 +98,10 @@ async function syncWithGithub() {
   }
 
   syncInProgress = true;
+  lastSyncError = '';
   const filesToSync = [...pendingGithubFiles.entries()];
   $('#githubButton').classList.add('syncing');
+  updateSyncStatus('syncing');
   try {
     for (const [path, data] of filesToSync) {
       const fileResponse = await fetch(syncApiUrl(path), { headers: githubHeaders() });
@@ -78,9 +120,13 @@ async function syncWithGithub() {
       }
       if (pendingGithubFiles.get(path) === data) pendingGithubFiles.delete(path);
     }
+    lastSyncedAt = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     showToast('GitHub sincronizado', `${filesToSync.length} ${filesToSync.length === 1 ? 'arquivo JSON atualizado' : 'arquivos JSON atualizados'}.`);
   } catch (error) {
-    showToast('Falha no sync', error instanceof TypeError ? 'Sem acesso ao GitHub. Tentaremos novamente.' : error.message);
+    const message = error instanceof TypeError ? 'Sem acesso ao GitHub. Tentaremos novamente.' : error.message;
+    lastSyncError = message;
+    updateSyncStatus('sync-error', message);
+    showToast('Falha no sync', message);
   } finally {
     $('#githubButton').classList.remove('syncing');
     syncInProgress = false;
@@ -90,6 +136,8 @@ async function syncWithGithub() {
 
 function queueGithubFile(path, data) {
   pendingGithubFiles.set(path, JSON.parse(JSON.stringify(data)));
+  if (githubConnection) updateSyncCountdown();
+  else updateSyncStatus('local', 'Alteração salva neste navegador; conecte o GitHub para enviá-la.');
 }
 
 function syncCompletedSave() {
@@ -452,6 +500,8 @@ $('#githubForm').addEventListener('submit', async (event) => {
 
     const repositoryData = await response.json();
     githubConnection = { repository: repositoryData.full_name, token };
+    lastSyncError = '';
+    lastSyncedAt = '';
     restartSyncTimer();
     updateGithubButton();
     feedback.textContent = `Conectado a ${repositoryData.full_name}.`;
@@ -474,6 +524,8 @@ $('#githubForm').addEventListener('submit', async (event) => {
 
 $('#disconnectGithub').addEventListener('click', () => {
   githubConnection = null;
+  lastSyncError = '';
+  lastSyncedAt = '';
   restartSyncTimer();
   updateGithubButton();
   $('#githubForm').reset();
@@ -728,6 +780,7 @@ document.addEventListener('click', (event) => {
   }
 });
 
+resetLegacyProjectsOnce();
 loadProjects().then(() => {
   const match = location.hash.match(/^#projeto\/([^/]+)(?:\/(diario|baralhos))?$/);
   if (match) openProject(match[1]).then(() => {

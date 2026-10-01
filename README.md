@@ -26,7 +26,7 @@ projetos/
         └── nome-do-baralho.json
 ```
 
-Projetos criados pela interface começam como rascunhos locais serializados em JSON no `localStorage`, pois uma aplicação estática no navegador não pode escrever diretamente nos arquivos do repositório. A exclusão também é local: projetos do repositório são ocultados neste navegador, sem apagar seus arquivos de origem.
+O índice começa vazio para que cada instalação crie seus próprios projetos. Projetos criados pela interface começam como rascunhos locais serializados em JSON no `localStorage`, pois uma aplicação estática no navegador não pode escrever diretamente nos arquivos do repositório. A exclusão também é local: projetos do repositório são ocultados neste navegador, sem apagar seus arquivos de origem.
 
 ## Decisão sobre a composição das cartas
 
