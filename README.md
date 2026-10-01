@@ -34,6 +34,6 @@ A primeira versão deve compor título, texto e imagem em HTML/CSS. Isso mantém
 
 ## Persistência e GitHub
 
-Cada criação ou edição é salva imediatamente no `localStorage`; não há um intervalo periódico de salvamento. A interface confirma o salvamento local e informa o horário da última alteração.
+Cada criação ou edição concluída é salva imediatamente no `localStorage`. Campos de projeto, baralho e diário em edição também são considerados rascunhos, mesmo antes do envio do formulário.
 
-A conexão com o GitHub valida o repositório e o Personal Access Token diretamente pela API. A credencial permanece apenas na memória da aba e é descartada ao desconectar, recarregar ou fechar a página — ela nunca é incluída no JSON do projeto, em commits ou em logs. Nesta versão, conectar a conta não publica os rascunhos: o envio automático ao GitHub ainda não está disponível e essa limitação é informada na própria tela de conexão.
+A conexão com o GitHub valida o repositório e o Personal Access Token diretamente pela API. A credencial permanece apenas na memória da aba e é descartada ao desconectar, recarregar ou fechar a página — ela nunca é incluída no JSON do projeto, em commits ou em logs. Enquanto a conexão está ativa, a interface exibe uma contagem regressiva de 60 segundos e publica em `.card-builder/autosave.json` somente quando o conteúdo diverge do último sync. Concluir uma alteração força o envio imediatamente e reinicia a contagem.
