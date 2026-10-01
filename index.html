@@ -31,9 +31,8 @@
 
       <nav class="main-nav" aria-label="Navegação principal">
         <a href="#visao" class="active" data-view="visao"><span>⌂</span> Visão geral</a>
-        <a href="#diario" data-view="diario"><span>▤</span> Diário <b id="navDiaryCount">0</b></a>
         <a href="#baralhos" data-view="baralhos"><span>▱</span> Baralhos <b id="navDeckCount">0</b></a>
-        <a href="#arquivos" data-view="arquivos"><span>◇</span> Arquivos</a>
+        <a href="#diario" data-view="diario"><span>▤</span> Diário <b id="navDiaryCount">0</b></a>
       </nav>
 
       <div class="sidebar-foot">
@@ -98,6 +97,14 @@
           <button class="danger-button" id="deleteProjectButton">Excluir projeto</button>
         </section>
         </div>
+
+        <section id="deckPage" class="deck-page" hidden>
+          <header class="deck-page-head">
+            <div><button class="back-button" id="backToProject">← Voltar ao projeto</button><p class="eyebrow">BARALHO</p><h1 id="deckPageTitle">Cartas</h1><p id="deckPageDescription"></p></div>
+            <span class="card-total" id="deckPageCount">0 cartas</span>
+          </header>
+          <div class="cards-grid" id="cardsGrid"></div>
+        </section>
       </div>
     </main>
   </div>
@@ -112,11 +119,18 @@
         <label>Tamanho<select name="size"><option>63 × 88 mm (poker)</option><option>57 × 89 mm (bridge)</option><option>70 × 120 mm (tarô)</option><option>Personalizado</option></select></label>
         <label>Material<select name="material"><option>Couche fosco</option><option>Couche brilho</option><option>Linho</option><option>Papel reciclado</option></select></label>
         <label>Espessura<select name="weight"><option>300 g/m²</option><option>310 g/m²</option><option>330 g/m²</option><option>350 g/m²</option></select></label>
-        <label>Imagem do verso<input type="file" accept="image/*"></label>
-        <label>Imagem do frame<input type="file" accept="image/*"></label>
+        <label>Imagem do verso<input name="backImage" type="file" accept="image/*"></label>
+        <label>Imagem do frame<input name="frameImage" type="file" accept="image/*"></label>
       </div>
-      <div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button" id="saveDeck">Criar baralho</button></div>
+      <div class="dialog-actions"><button type="button" id="openDeckPage" class="secondary-button" hidden>Ver cartas do baralho</button><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button" id="saveDeck">Criar baralho</button></div>
     </form>
+  </dialog>
+
+  <dialog id="cardPreviewDialog" class="dialog card-preview-dialog">
+    <div class="card-preview-layout">
+      <div id="tcgCardPreview" class="tcg-card"></div>
+      <div class="preview-copy"><p class="eyebrow">PREVIEW DA CARTA</p><h2 id="previewCardTitle"></h2><p>Composição em HTML com o frame, a arte e o conteúdo definidos para esta carta.</p><button type="button" data-close-dialog class="secondary-button">Fechar preview</button></div>
+    </div>
   </dialog>
 
   <dialog id="projectDialog" class="dialog compact">

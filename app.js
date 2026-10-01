@@ -8,6 +8,7 @@ const noteDialog = $('#noteDialog');
 const projectDialog = $('#projectDialog');
 const deleteProjectDialog = $('#deleteProjectDialog');
 const githubDialog = $('#githubDialog');
+const cardPreviewDialog = $('#cardPreviewDialog');
 const toast = $('#toast');
 let projects = [];
 let activeProject = null;
@@ -15,6 +16,7 @@ let diaryEntries = [];
 let editingDiaryIndex = null;
 let activeDecks = [];
 let editingDeckIndex = null;
+let viewingDeckIndex = null;
 let githubConnection = null;
 
 projectSwitcher.addEventListener('click', () => {
@@ -156,7 +158,7 @@ function renderDecks(decks) {
     const progressClass = index % 3 === 1 ? 'amber' : index % 3 === 2 ? 'teal' : '';
     return `<article class="deck-card" data-name="${escapeHtml(deck.nome)}" data-deck-index="${index}" tabindex="0" role="button" aria-label="Editar baralho ${escapeHtml(deck.nome)}">
       <div class="deck-preview ${theme}"><span class="card-back back-one">${escapeHtml(deck.simbolo || '✦')}</span><span class="card-back back-two">${escapeHtml(deck.simbolo || '◆')}</span></div>
-      <div class="deck-body"><div class="deck-title"><h3>${escapeHtml(deck.nome)}</h3><button aria-label="Opções de ${escapeHtml(deck.nome)}">•••</button></div><p>${escapeHtml(deck.descricao)}</p><div class="progress-label"><span>${deck.cartasProntas} de ${deck.quantidade} cartas</span><strong>${progress}%</strong></div><div class="progress ${progressClass}"><span style="width:${progress}%"></span></div><div class="deck-meta"><span>◫ ${escapeHtml(deck.tamanho)}</span><span>◉ ${escapeHtml(deck.espessura)}</span></div></div>
+      <div class="deck-body"><div class="deck-title"><h3>${escapeHtml(deck.nome)}</h3></div><p>${escapeHtml(deck.descricao)}</p><div class="progress-label"><span>${deck.cartasProntas} de ${deck.quantidade} cartas</span><strong>${progress}%</strong></div><div class="progress ${progressClass}"><span style="width:${progress}%"></span></div><div class="deck-meta"><span>◫ ${escapeHtml(deck.tamanho)}</span><span>◉ ${escapeHtml(deck.espessura)}</span></div></div>
     </article>`;
   }).join('');
   $('#deckGrid').innerHTML = `${cards}<button class="add-deck-card" id="addDeckCard"><span>＋</span><strong>Criar novo baralho</strong><small>Defina formato, materiais e comece a criar.</small></button>`;
@@ -181,6 +183,7 @@ function openDeckDialog(index = null) {
   $('#deckDialogTitle').textContent = isEditing ? 'Editar baralho' : 'Criar baralho';
   $('#deckDialogIntro').textContent = isEditing ? 'Atualize os dados do baralho selecionado.' : 'Comece pelos dados de produção. Você poderá adicionar e compor as cartas em seguida.';
   $('#saveDeck').textContent = isEditing ? 'Salvar alterações' : 'Criar baralho';
+  $('#openDeckPage').hidden = !isEditing;
   if (isEditing) {
     const deck = activeDecks[index];
     form.elements.name.value = deck.nome;
@@ -190,6 +193,48 @@ function openDeckDialog(index = null) {
     setSelectValue(form.elements.weight, deck.espessura);
   }
   deckDialog.showModal();
+}
+
+function deckCards(deck) {
+  return Array.from({ length: deck.quantidade }, (_, index) => deck.cartas?.[index] || {
+    titulo: `Carta ${index + 1}`,
+    descricao: 'Esta carta ainda não possui conteúdo.',
+    imagem: ''
+  });
+}
+
+function openDeckPage(index) {
+  viewingDeckIndex = index;
+  const deck = activeDecks[index];
+  if (!deck) return;
+  deckDialog.close();
+  $('#projectPage').hidden = true;
+  $('#deckPage').hidden = false;
+  $('#deckPageTitle').textContent = deck.nome;
+  $('#deckPageDescription').textContent = deck.descricao || 'Todas as cartas deste baralho.';
+  $('#deckPageCount').textContent = `${deck.quantidade} ${deck.quantidade === 1 ? 'carta' : 'cartas'}`;
+  $('#cardsGrid').innerHTML = deckCards(deck).map((card, cardIndex) => `
+    <button type="button" class="collection-card" data-card-index="${cardIndex}">
+      <span class="collection-card-art" ${card.imagem ? `style="background-image:url('${escapeHtml(card.imagem)}')"` : ''}>${card.imagem ? '' : '<span aria-hidden="true">✦</span>'}</span>
+      <span class="collection-card-copy"><small>CARTA ${String(cardIndex + 1).padStart(2, '0')}</small><strong>${escapeHtml(card.titulo || `Carta ${cardIndex + 1}`)}</strong><span>${escapeHtml(card.descricao || 'Sem descrição.')}</span></span>
+    </button>`).join('');
+  $$('[data-card-index]').forEach((button) => button.addEventListener('click', () => openCardPreview(deck, deckCards(deck)[Number(button.dataset.cardIndex)])));
+  history.replaceState(null, '', `#projeto/${activeProject.path}/baralhos/${index + 1}`);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function openCardPreview(deck, card) {
+  const title = card.titulo || 'Carta sem título';
+  $('#previewCardTitle').textContent = title;
+  const frameStyle = deck.imagemFrame ? `background-image:url('${escapeHtml(deck.imagemFrame)}')` : '';
+  $('#tcgCardPreview').innerHTML = `
+    <div class="tcg-frame" style="${frameStyle}">
+      <header>${escapeHtml(title)}</header>
+      <div class="tcg-art" ${card.imagem ? `style="background-image:url('${escapeHtml(card.imagem)}')"` : ''}>${card.imagem ? '' : '<span aria-hidden="true">✦</span>'}</div>
+      <div class="tcg-description">${escapeHtml(card.descricao || 'Sem descrição.')}</div>
+      <footer><span>${escapeHtml(deck.simbolo || '✦')}</span><small>${escapeHtml(deck.nome)}</small></footer>
+    </div>`;
+  cardPreviewDialog.showModal();
 }
 
 function setSelectValue(select, value) {
@@ -214,10 +259,18 @@ function showHome() {
   $('#homeWelcome').hidden = false;
   $('#projectsSection').hidden = false;
   $('#projectPage').hidden = true;
+  $('#deckPage').hidden = true;
   history.replaceState(null, '', '#visao');
 }
 
 $('#backToProjects').addEventListener('click', showHome);
+$('#backToProject').addEventListener('click', () => {
+  $('#deckPage').hidden = true;
+  $('#projectPage').hidden = false;
+  viewingDeckIndex = null;
+  updateProjectUrl('visao');
+});
+$('#openDeckPage').addEventListener('click', () => openDeckPage(editingDeckIndex));
 $('#newDeckButton').addEventListener('click', () => openDeckDialog());
 $('#newProjectButton').addEventListener('click', () => projectDialog.showModal());
 $('#newNoteButton').addEventListener('click', () => {
@@ -332,15 +385,19 @@ $('#globalSearch').addEventListener('input', (event) => {
   }
 });
 
-$('#deckForm').addEventListener('submit', (event) => {
+$('#deckForm').addEventListener('submit', async (event) => {
   event.preventDefault();
   const form = $('#deckForm');
   if (!form.reportValidity()) return;
   const data = new FormData(form);
+  const backImage = data.get('backImage');
+  const frameImage = data.get('frameImage');
   const deck = {
     ...(editingDeckIndex === null ? { cartasProntas: 0, descricao: '', simbolo: '✦', cartas: [] } : activeDecks[editingDeckIndex]),
     nome: data.get('name'), quantidade: Number(data.get('quantity')), tamanho: data.get('size'),
-    material: data.get('material'), espessura: data.get('weight')
+    material: data.get('material'), espessura: data.get('weight'),
+    imagemVerso: backImage?.size ? await fileToDataUrl(backImage) : (editingDeckIndex === null ? '' : activeDecks[editingDeckIndex].imagemVerso || ''),
+    imagemFrame: frameImage?.size ? await fileToDataUrl(frameImage) : (editingDeckIndex === null ? '' : activeDecks[editingDeckIndex].imagemFrame || '')
   };
   if (editingDeckIndex === null) activeDecks.push(deck);
   else activeDecks[editingDeckIndex] = deck;
