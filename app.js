@@ -12,6 +12,8 @@ let projects = [];
 let activeProject = null;
 let diaryEntries = [];
 let editingDiaryIndex = null;
+let activeDecks = [];
+let editingDeckIndex = null;
 
 projectSwitcher.addEventListener('click', () => {
   const willOpen = projectMenu.hidden;
@@ -79,6 +81,8 @@ async function openProject(path) {
   $('#heroProjectDescription').textContent = project.descricao;
   $('#diaryCount').textContent = '0';
   $('#deckGrid').innerHTML = '<p class="loading-state">Carregando baralhos…</p>';
+  $('[data-view="diario"]').href = `#projeto/${path}/diario`;
+  $('[data-view="baralhos"]').href = `#projeto/${path}/baralhos`;
 
   try {
     const decks = project.local ? project.baralhos : await Promise.all(project.baralhos.map(async (file) => {
@@ -86,13 +90,13 @@ async function openProject(path) {
       if (!response.ok) throw new Error(`Não foi possível abrir ${file}.`);
       return response.json();
     }));
-    const [diary, activities] = project.local
-      ? [project.diario, project.atividades]
-      : await Promise.all([
-        loadJson(`projetos/${path}/${project.diario}`),
-        loadJson(`projetos/${path}/${project.atividades}`)
-      ]);
-    renderDecks(decks);
+    const diary = project.local
+      ? project.diario
+      : await loadJson(`projetos/${path}/${project.diario}`);
+    const storedDecks = readLocalJson('card-builder-decks', {});
+    const savedDecks = Array.isArray(storedDecks) ? {} : storedDecks;
+    activeDecks = savedDecks[path] || decks;
+    renderDecks(activeDecks);
     const savedDiaryEntries = readLocalJson('card-builder-notes', [])
       .filter((note) => note.project === path && Number.isInteger(note.index));
     diaryEntries = diary.map((entry, index) => savedDiaryEntries.find((note) => note.index === index)?.entry || entry);
@@ -101,13 +105,12 @@ async function openProject(path) {
       .sort((a, b) => a.index - b.index)
       .forEach((note) => diaryEntries.push(note.entry));
     renderDiary();
-    renderActivities(activities);
-    $('#deckCount').textContent = decks.length;
-    $('#cardCount').textContent = decks.reduce((total, deck) => total + deck.quantidade, 0);
+    $('#deckCount').textContent = activeDecks.length;
+    $('#cardCount').textContent = activeDecks.reduce((total, deck) => total + deck.quantidade, 0);
     $('#diaryCount').textContent = diaryEntries.length;
-    $('#navDeckCount').textContent = decks.length;
+    $('#navDeckCount').textContent = activeDecks.length;
     $('#navDiaryCount').textContent = diaryEntries.length;
-    history.replaceState(null, '', `#projeto/${path}`);
+    updateProjectUrl('visao');
     showToast('Projeto carregado', `${project.nome} está pronto para editar.`);
   } catch (error) {
     $('#deckGrid').innerHTML = `<p class="error-state">${escapeHtml(error.message)}</p>`;
@@ -129,7 +132,7 @@ function readLocalJson(key, fallback) {
 }
 
 function renderDiary() {
-  $('#noteList').innerHTML = diaryEntries.length ? diaryEntries.slice(0, 3).map((entry, index) => `
+  $('#noteList').innerHTML = diaryEntries.length ? diaryEntries.map((entry, index) => `
     <button type="button" data-diary-index="${index}" aria-label="Editar ${escapeHtml(entry.titulo)}"><span class="note-icon ${['', 'peach', 'teal-bg'][index]}">▤</span><span><strong>${escapeHtml(entry.titulo)}</strong><small>${escapeHtml(entry.resumo)}</small></span><time>${escapeHtml(entry.data)}<br><b>${escapeHtml(entry.hora)}</b></time></button>
   `).join('') : '<p class="empty-state">O diário ainda não tem páginas.</p>';
   $$('[data-diary-index]').forEach((button) => button.addEventListener('click', () => {
@@ -144,25 +147,58 @@ function renderDiary() {
   }));
 }
 
-function renderActivities(entries) {
-  $('#activityList').innerHTML = entries.length ? entries.map((entry) => `
-    <div><span class="activity-avatar ${escapeHtml(entry.estilo || '')}">${escapeHtml(entry.icone)}</span><p><strong>${escapeHtml(entry.titulo)}</strong><small>${escapeHtml(entry.detalhe)}</small></p></div>
-  `).join('') : '<p class="empty-state">Nenhuma atividade recente.</p>';
-}
-
 function renderDecks(decks) {
   const cards = decks.map((deck, index) => {
     const progress = Math.round((deck.cartasProntas / deck.quantidade) * 100);
     const theme = ['heroes', 'relics', 'lands'][index % 3];
-    const statusClass = deck.status === 'Em revisão' ? 'review' : deck.status === 'Rascunho' ? 'draft' : '';
     const progressClass = index % 3 === 1 ? 'amber' : index % 3 === 2 ? 'teal' : '';
-    return `<article class="deck-card" data-name="${escapeHtml(deck.nome)}">
-      <div class="deck-preview ${theme}"><span class="card-back back-one">${escapeHtml(deck.simbolo || '✦')}</span><span class="card-back back-two">${escapeHtml(deck.simbolo || '◆')}</span><span class="deck-status ${statusClass}">${escapeHtml(deck.status)}</span></div>
+    return `<article class="deck-card" data-name="${escapeHtml(deck.nome)}" data-deck-index="${index}" tabindex="0" role="button" aria-label="Editar baralho ${escapeHtml(deck.nome)}">
+      <div class="deck-preview ${theme}"><span class="card-back back-one">${escapeHtml(deck.simbolo || '✦')}</span><span class="card-back back-two">${escapeHtml(deck.simbolo || '◆')}</span></div>
       <div class="deck-body"><div class="deck-title"><h3>${escapeHtml(deck.nome)}</h3><button aria-label="Opções de ${escapeHtml(deck.nome)}">•••</button></div><p>${escapeHtml(deck.descricao)}</p><div class="progress-label"><span>${deck.cartasProntas} de ${deck.quantidade} cartas</span><strong>${progress}%</strong></div><div class="progress ${progressClass}"><span style="width:${progress}%"></span></div><div class="deck-meta"><span>◫ ${escapeHtml(deck.tamanho)}</span><span>◉ ${escapeHtml(deck.espessura)}</span></div></div>
     </article>`;
   }).join('');
   $('#deckGrid').innerHTML = `${cards}<button class="add-deck-card" id="addDeckCard"><span>＋</span><strong>Criar novo baralho</strong><small>Defina formato, materiais e comece a criar.</small></button>`;
-  $('#addDeckCard').addEventListener('click', () => deckDialog.showModal());
+  $$('[data-deck-index]').forEach((card) => {
+    const edit = () => openDeckDialog(Number(card.dataset.deckIndex));
+    card.addEventListener('click', edit);
+    card.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        edit();
+      }
+    });
+  });
+  $('#addDeckCard').addEventListener('click', () => openDeckDialog());
+}
+
+function openDeckDialog(index = null) {
+  editingDeckIndex = index;
+  const form = $('#deckForm');
+  form.reset();
+  const isEditing = index !== null;
+  $('#deckDialogTitle').textContent = isEditing ? 'Editar baralho' : 'Criar baralho';
+  $('#deckDialogIntro').textContent = isEditing ? 'Atualize os dados do baralho selecionado.' : 'Comece pelos dados de produção. Você poderá adicionar e compor as cartas em seguida.';
+  $('#saveDeck').textContent = isEditing ? 'Salvar alterações' : 'Criar baralho';
+  if (isEditing) {
+    const deck = activeDecks[index];
+    form.elements.name.value = deck.nome;
+    form.elements.quantity.value = deck.quantidade;
+    setSelectValue(form.elements.size, deck.tamanho);
+    setSelectValue(form.elements.material, deck.material);
+    setSelectValue(form.elements.weight, deck.espessura);
+  }
+  deckDialog.showModal();
+}
+
+function setSelectValue(select, value) {
+  if (![...select.options].some((option) => option.value === value)) select.add(new Option(value, value));
+  select.value = value;
+}
+
+function updateProjectUrl(section) {
+  if (!activeProject) return;
+  const suffix = section === 'visao' ? '' : `/${section}`;
+  history.replaceState(null, '', `#projeto/${activeProject.path}${suffix}`);
 }
 
 function showHome() {
@@ -171,6 +207,8 @@ function showHome() {
   $('.project-thumb').textContent = '—';
   $('#navDeckCount').textContent = '0';
   $('#navDiaryCount').textContent = '0';
+  $('[data-view="diario"]').href = '#diario';
+  $('[data-view="baralhos"]').href = '#baralhos';
   $('#homeWelcome').hidden = false;
   $('#projectsSection').hidden = false;
   $('#projectPage').hidden = true;
@@ -178,7 +216,7 @@ function showHome() {
 }
 
 $('#backToProjects').addEventListener('click', showHome);
-$('#newDeckButton').addEventListener('click', () => deckDialog.showModal());
+$('#newDeckButton').addEventListener('click', () => openDeckDialog());
 $('#newProjectButton').addEventListener('click', () => projectDialog.showModal());
 $('#newNoteButton').addEventListener('click', () => {
   editingDiaryIndex = null;
@@ -192,6 +230,10 @@ $('#menuButton').addEventListener('click', () => $('#sidebar').classList.toggle(
 
 $$('.main-nav a').forEach((link) => link.addEventListener('click', () => {
   if (link.dataset.view === 'visao') showHome();
+  else if (activeProject && ['diario', 'baralhos'].includes(link.dataset.view)) {
+    updateProjectUrl(link.dataset.view);
+    document.getElementById(link.dataset.view).scrollIntoView();
+  }
   $$('.main-nav a').forEach((item) => item.classList.remove('active'));
   link.classList.add('active');
   if (window.innerWidth <= 760) $('#sidebar').classList.remove('open');
@@ -211,12 +253,30 @@ $('#deckForm').addEventListener('submit', (event) => {
   const form = $('#deckForm');
   if (!form.reportValidity()) return;
   const data = new FormData(form);
-  const drafts = JSON.parse(localStorage.getItem('card-builder-decks') || '[]');
-  drafts.push({ project: activeProject?.path, name: data.get('name'), quantity: data.get('quantity'), size: data.get('size'), material: data.get('material'), weight: data.get('weight'), createdAt: new Date().toISOString() });
-  localStorage.setItem('card-builder-decks', JSON.stringify(drafts));
+  const deck = {
+    ...(editingDeckIndex === null ? { cartasProntas: 0, descricao: '', simbolo: '✦', cartas: [] } : activeDecks[editingDeckIndex]),
+    nome: data.get('name'), quantidade: Number(data.get('quantity')), tamanho: data.get('size'),
+    material: data.get('material'), espessura: data.get('weight')
+  };
+  if (editingDeckIndex === null) activeDecks.push(deck);
+  else activeDecks[editingDeckIndex] = deck;
+  const storedDecks = readLocalJson('card-builder-decks', {});
+  const savedDecks = Array.isArray(storedDecks) ? {} : storedDecks;
+  savedDecks[activeProject.path] = activeDecks;
+  localStorage.setItem('card-builder-decks', JSON.stringify(savedDecks));
+  if (activeProject.local) {
+    activeProject.baralhos = activeDecks;
+    const localProjects = readLocalJson('card-builder-projects', []).map((project) => project.path === activeProject.path ? activeProject : project);
+    localStorage.setItem('card-builder-projects', JSON.stringify(localProjects));
+  }
+  renderDecks(activeDecks);
+  $('#deckCount').textContent = activeDecks.length;
+  $('#cardCount').textContent = activeDecks.reduce((total, item) => total + item.quantidade, 0);
+  $('#navDeckCount').textContent = activeDecks.length;
   deckDialog.close();
-  showToast('Baralho criado', `${data.get('name')} foi salvo como rascunho local.`);
+  showToast(editingDeckIndex === null ? 'Baralho criado' : 'Baralho atualizado', `${data.get('name')} foi salvo localmente.`);
   form.reset();
+  editingDeckIndex = null;
 });
 
 $('#projectForm').addEventListener('submit', async (event) => {
@@ -234,8 +294,7 @@ $('#projectForm').addEventListener('submit', async (event) => {
     path: `local-${Date.now()}`,
     local: true,
     baralhos: [],
-    diario: [],
-    atividades: []
+    diario: []
   };
   const localProjects = readLocalJson('card-builder-projects', []);
   localProjects.push(project);
@@ -337,6 +396,11 @@ document.addEventListener('click', (event) => {
 });
 
 loadProjects().then(() => {
-  const match = location.hash.match(/^#projeto\/(.+)$/);
-  if (match) openProject(match[1]);
+  const match = location.hash.match(/^#projeto\/([^/]+)(?:\/(diario|baralhos))?$/);
+  if (match) openProject(match[1]).then(() => {
+    if (match[2]) {
+      updateProjectUrl(match[2]);
+      document.getElementById(match[2]).scrollIntoView();
+    }
+  });
 });

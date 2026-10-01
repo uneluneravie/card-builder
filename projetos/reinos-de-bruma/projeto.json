@@ -7,6 +7,5 @@
     "reliquias-antigas.json",
     "terras-nebulosas.json"
   ],
-  "diario": "diario/paginas.json",
-  "atividades": "atividades.json"
+  "diario": "diario/paginas.json"
 }
