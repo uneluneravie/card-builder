@@ -47,11 +47,6 @@
       <header class="topbar">
         <button class="icon-button menu-button" id="menuButton" aria-label="Abrir menu">☰</button>
         <label class="global-search"><span>⌕</span><input id="globalSearch" type="search" placeholder="Buscar cartas, baralhos ou notas..." aria-label="Buscar"></label>
-        <div class="top-actions">
-          <button class="icon-button" aria-label="Ajuda">?</button>
-          <button class="icon-button notification" aria-label="Notificações">♧<i></i></button>
-          <button class="avatar" aria-label="Abrir perfil">LM</button>
-        </div>
       </header>
 
       <div class="page" id="visao">
@@ -84,21 +79,17 @@
           </div>
         </section>
 
-        <section class="section-block decks-section">
-          <div class="section-heading"><div><h2>Seus baralhos</h2><p>Organize e acompanhe a produção de cada conjunto.</p></div><a href="#baralhos">Ver todos <span>→</span></a></div>
+        <section class="section-block decks-section" id="baralhos">
+          <div class="section-heading"><div><h2>Seus baralhos</h2><p>Organize cada conjunto do projeto.</p></div></div>
           <div class="deck-grid" id="deckGrid"></div>
         </section>
 
         <section class="lower-grid">
-          <div class="section-block diary-block">
+          <div class="section-block diary-block" id="diario">
             <div class="section-heading"><div><h2>Diário do projeto</h2><p>Suas notas e ideias mais recentes.</p></div><button class="soft-button" id="newNoteButton">＋ Nova página</button></div>
             <div class="note-list" id="noteList">
               <p class="loading-state">Carregando diário…</p>
             </div>
-          </div>
-          <div class="section-block activity-block">
-            <div class="section-heading"><div><h2>Atividade recente</h2><p>Alterações salvas no projeto.</p></div><button class="ghost-icon">•••</button></div>
-            <div class="activity-list" id="activityList"><p class="loading-state">Carregando atividades…</p></div>
           </div>
         </section>
         <section class="danger-zone" aria-labelledby="deleteProjectTitle">
@@ -112,8 +103,8 @@
 
   <dialog id="deckDialog" class="dialog">
     <form method="dialog" id="deckForm">
-      <div class="dialog-head"><div><p class="eyebrow">NOVO INVENTÁRIO</p><h2>Criar baralho</h2></div><button type="button" data-close-dialog aria-label="Fechar">×</button></div>
-      <p class="dialog-intro">Comece pelos dados de produção. Você poderá adicionar e compor as cartas em seguida.</p>
+      <div class="dialog-head"><div><p class="eyebrow">INVENTÁRIO</p><h2 id="deckDialogTitle">Criar baralho</h2></div><button type="button" data-close-dialog aria-label="Fechar">×</button></div>
+      <p class="dialog-intro" id="deckDialogIntro">Comece pelos dados de produção. Você poderá adicionar e compor as cartas em seguida.</p>
       <div class="form-grid">
         <label class="full">Nome do baralho<input name="name" required placeholder="Ex.: Criaturas da Névoa"></label>
         <label>Quantidade de cartas<input name="quantity" type="number" min="1" value="54" required></label>

@@ -6,6 +6,5 @@
     "tripulacao.json",
     "setores.json"
   ],
-  "diario": "diario/paginas.json",
-  "atividades": "atividades.json"
+  "diario": "diario/paginas.json"
 }
