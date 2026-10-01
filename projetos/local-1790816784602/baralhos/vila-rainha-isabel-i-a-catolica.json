@@ -1,8 +1,279 @@
 {
-  "cartasProntas": 0,
+  "cartasProntas": 54,
   "descricao": "",
   "simbolo": "✦",
-  "cartas": [],
+  "cartas": [
+    {
+      "titulo": "Tomás Torquemada, o Inquisidor",
+      "descricao": "Lorem ipsum",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 2",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 3",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 4",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 5",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 6",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 7",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 8",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 9",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 10",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 11",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 12",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 13",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 14",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 15",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 16",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 17",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 18",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 19",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 20",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 21",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 22",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 23",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 24",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 25",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 26",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 27",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 28",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 29",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 30",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 31",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 32",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 33",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 34",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 35",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 36",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 37",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 38",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 39",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 40",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 41",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 42",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 43",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 44",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 45",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 46",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 47",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 48",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 49",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 50",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 51",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 52",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 53",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    },
+    {
+      "titulo": "Carta 54",
+      "descricao": "Esta carta ainda não possui conteúdo.",
+      "imagem": ""
+    }
+  ],
   "nome": "Vilã | Rainha Isabel I, a Católica",
   "quantidade": 54,
   "tamanho": "Mini Chimera (43 × 65 mm)",
