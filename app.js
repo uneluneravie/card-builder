@@ -17,36 +17,14 @@ let editingDiaryIndex = null;
 let activeDecks = [];
 let editingDeckIndex = null;
 let viewingDeckIndex = null;
+let editingCardIndex = null;
+let activeDeckFiles = [];
 let githubConnection = null;
 let syncInterval = null;
 let nextSyncAt = null;
-let lastSyncedSnapshot = null;
 let syncInProgress = false;
-let changeRevision = 0;
+const pendingGithubFiles = new Map();
 const SYNC_SECONDS = 60;
-const SYNC_FILE = '.card-builder/autosave.json';
-
-function collectFormDrafts() {
-  return ['projectForm', 'deckForm', 'noteForm'].reduce((drafts, formId) => {
-    const form = document.getElementById(formId);
-    drafts[formId] = [...form.elements].filter((field) => field.name).reduce((fields, field) => {
-      fields[field.name] = field.type === 'file'
-        ? [...field.files].map((file) => ({ name: file.name, size: file.size, lastModified: file.lastModified }))
-        : field.value;
-      return fields;
-    }, {});
-    return drafts;
-  }, {});
-}
-
-function buildSyncSnapshot() {
-  const localData = {};
-  for (let index = 0; index < localStorage.length; index += 1) {
-    const key = localStorage.key(index);
-    if (key?.startsWith('card-builder-')) localData[key] = readLocalJson(key, localStorage.getItem(key));
-  }
-  return JSON.stringify({ version: 1, localData, drafts: collectFormDrafts() }, null, 2);
-}
 
 function githubHeaders() {
   return {
@@ -56,87 +34,67 @@ function githubHeaders() {
   };
 }
 
-function syncApiUrl() {
+function syncApiUrl(path) {
   const [owner, repository] = githubConnection.repository.split('/');
-  return `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/contents/${SYNC_FILE.split('/').map(encodeURIComponent).join('/')}`;
+  return `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;
 }
 
 function restartSyncTimer() {
   clearInterval(syncInterval);
   if (!githubConnection) {
     nextSyncAt = null;
-    $('#syncCountdown').hidden = true;
     return;
   }
   nextSyncAt = Date.now() + SYNC_SECONDS * 1000;
-  $('#syncCountdown').hidden = false;
-  updateSyncCountdown();
   syncInterval = setInterval(() => {
-    updateSyncCountdown();
     if (Date.now() >= nextSyncAt) void syncWithGithub();
   }, 1000);
 }
 
-function updateSyncCountdown() {
-  if (!githubConnection || !nextSyncAt) return;
-  const seconds = Math.max(0, Math.ceil((nextSyncAt - Date.now()) / 1000));
-  $('#syncCountdown').textContent = `Próximo sync em ${seconds}s`;
-}
-
-async function syncWithGithub({ force = false } = {}) {
+async function syncWithGithub() {
   if (!githubConnection || syncInProgress) return;
-  const snapshot = buildSyncSnapshot();
-  if (!force && snapshot === lastSyncedSnapshot) {
+  if (!pendingGithubFiles.size) {
     restartSyncTimer();
     return;
   }
 
   syncInProgress = true;
-  const revisionAtStart = changeRevision;
-  const status = $('#saveStatus');
-  status.className = 'save-status syncing';
-  status.querySelector('strong').textContent = 'Sincronizando com o GitHub…';
+  const filesToSync = [...pendingGithubFiles.entries()];
+  $('#githubButton').classList.add('syncing');
   try {
-    const fileResponse = await fetch(syncApiUrl(), { headers: githubHeaders() });
-    if (!fileResponse.ok && fileResponse.status !== 404) throw new Error(`Não foi possível consultar o arquivo de sync (${fileResponse.status}).`);
-    const existingFile = fileResponse.ok ? await fileResponse.json() : null;
-    const content = btoa(unescape(encodeURIComponent(snapshot)));
-    const response = await fetch(syncApiUrl(), {
-      method: 'PUT',
-      headers: { ...githubHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: 'chore: sincronizar rascunhos do Card Builder',
-        content,
-        ...(existingFile?.sha ? { sha: existingFile.sha } : {})
-      })
-    });
-    if (!response.ok) {
-      const details = await response.json().catch(() => ({}));
-      throw new Error(details.message || `O GitHub recusou o sync (${response.status}).`);
+    for (const [path, data] of filesToSync) {
+      const fileResponse = await fetch(syncApiUrl(path), { headers: githubHeaders() });
+      if (!fileResponse.ok && fileResponse.status !== 404) throw new Error(`Não foi possível consultar ${path} (${fileResponse.status}).`);
+      const existingFile = fileResponse.ok ? await fileResponse.json() : null;
+      const json = `${JSON.stringify(data, null, 2)}\n`;
+      const content = btoa(unescape(encodeURIComponent(json)));
+      const response = await fetch(syncApiUrl(path), {
+        method: 'PUT',
+        headers: { ...githubHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: `chore: atualizar ${path}`, content, ...(existingFile?.sha ? { sha: existingFile.sha } : {}) })
+      });
+      if (!response.ok) {
+        const details = await response.json().catch(() => ({}));
+        throw new Error(details.message || `O GitHub recusou a atualização de ${path} (${response.status}).`);
+      }
+      if (pendingGithubFiles.get(path) === data) pendingGithubFiles.delete(path);
     }
-    lastSyncedSnapshot = snapshot;
-    const syncedAt = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    status.className = 'save-status';
-    status.querySelector('strong').textContent = 'GitHub sincronizado';
-    status.querySelector('small').textContent = `Último sync às ${syncedAt}.`;
-    if (changeRevision !== revisionAtStart) status.querySelector('small').textContent += ' Há novas alterações pendentes.';
+    showToast('GitHub sincronizado', `${filesToSync.length} ${filesToSync.length === 1 ? 'arquivo JSON atualizado' : 'arquivos JSON atualizados'}.`);
   } catch (error) {
-    status.className = 'save-status sync-error';
-    status.querySelector('strong').textContent = 'Falha no sync';
-    status.querySelector('small').textContent = error instanceof TypeError ? 'Sem acesso ao GitHub. Tentaremos novamente.' : error.message;
+    showToast('Falha no sync', error instanceof TypeError ? 'Sem acesso ao GitHub. Tentaremos novamente.' : error.message);
   } finally {
+    $('#githubButton').classList.remove('syncing');
     syncInProgress = false;
     restartSyncTimer();
   }
 }
 
-function registerChange() {
-  changeRevision += 1;
+function queueGithubFile(path, data) {
+  pendingGithubFiles.set(path, JSON.parse(JSON.stringify(data)));
 }
 
 function syncCompletedSave() {
-  registerChange();
-  if (githubConnection) void syncWithGithub({ force: true });
+  if (githubConnection) void syncWithGithub();
 }
 
 projectSwitcher.addEventListener('click', () => {
@@ -214,12 +172,23 @@ async function openProject(path) {
       if (!response.ok) throw new Error(`Não foi possível abrir ${file}.`);
       return response.json();
     }));
+    activeDeckFiles = project.local
+      ? decks.map((deck, index) => deck.arquivo || `${slugify(deck.nome || `baralho-${index + 1}`)}.json`)
+      : [...project.baralhos];
     const diary = project.local
       ? project.diario
       : await loadJson(`projetos/${path}/${project.diario}`);
     const storedDecks = readLocalJson('card-builder-decks', {});
     const savedDecks = Array.isArray(storedDecks) ? {} : storedDecks;
     activeDecks = savedDecks[path] || decks;
+    activeDecks.slice(activeDeckFiles.length).forEach((deck, extraIndex) => {
+      const usedFiles = new Set(activeDeckFiles);
+      const base = slugify(deck.nome || `baralho-${activeDeckFiles.length + extraIndex + 1}`);
+      let file = `${base}.json`;
+      let suffix = 2;
+      while (usedFiles.has(file)) file = `${base}-${suffix++}.json`;
+      activeDeckFiles.push(file);
+    });
     renderDecks(activeDecks);
     const savedDiaryEntries = readLocalJson('card-builder-notes', [])
       .filter((note) => note.project === path && Number.isInteger(note.index));
@@ -338,14 +307,22 @@ function openDeckPage(index) {
       <span class="collection-card-art" ${card.imagem ? `style="background-image:url('${escapeHtml(card.imagem)}')"` : ''}>${card.imagem ? '' : '<span aria-hidden="true">✦</span>'}</span>
       <span class="collection-card-copy"><small>CARTA ${String(cardIndex + 1).padStart(2, '0')}</small><strong>${escapeHtml(card.titulo || `Carta ${cardIndex + 1}`)}</strong><span>${escapeHtml(card.descricao || 'Sem descrição.')}</span></span>
     </button>`).join('');
-  $$('[data-card-index]').forEach((button) => button.addEventListener('click', () => openCardPreview(deck, deckCards(deck)[Number(button.dataset.cardIndex)])));
+  $$('[data-card-index]').forEach((button) => button.addEventListener('click', () => {
+    const cardIndex = Number(button.dataset.cardIndex);
+    openCardPreview(deck, deckCards(deck)[cardIndex], cardIndex);
+  }));
   history.replaceState(null, '', `#projeto/${activeProject.path}/baralhos/${index + 1}`);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function openCardPreview(deck, card) {
+function openCardPreview(deck, card, cardIndex) {
+  editingCardIndex = cardIndex;
   const title = card.titulo || 'Carta sem título';
-  $('#previewCardTitle').textContent = title;
+  const form = $('#cardForm');
+  form.reset();
+  form.elements.title.value = title;
+  form.elements.description.value = card.descricao || '';
+  $('#cardImageHint').textContent = card.imagem ? 'A imagem atual será mantida se nenhum novo arquivo for escolhido.' : 'Escolha uma imagem para esta carta.';
   const frameStyle = deck.imagemFrame ? `background-image:url('${escapeHtml(deck.imagemFrame)}')` : '';
   $('#tcgCardPreview').innerHTML = `
     <div class="tcg-frame" style="${frameStyle}">
@@ -355,6 +332,14 @@ function openCardPreview(deck, card) {
       <footer><span>${escapeHtml(deck.simbolo || '✦')}</span><small>${escapeHtml(deck.nome)}</small></footer>
     </div>`;
   cardPreviewDialog.showModal();
+}
+
+function slugify(value) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'baralho';
+}
+
+function deckGithubPath(index) {
+  return `projetos/${activeProject.path}/baralhos/${activeDeckFiles[index]}`;
 }
 
 function setSelectValue(select, value) {
@@ -450,7 +435,6 @@ $('#githubForm').addEventListener('submit', async (event) => {
 
     const repositoryData = await response.json();
     githubConnection = { repository: repositoryData.full_name, token };
-    lastSyncedSnapshot = null;
     restartSyncTimer();
     updateGithubButton();
     feedback.textContent = `Conectado a ${repositoryData.full_name}.`;
@@ -473,7 +457,6 @@ $('#githubForm').addEventListener('submit', async (event) => {
 
 $('#disconnectGithub').addEventListener('click', () => {
   githubConnection = null;
-  lastSyncedSnapshot = null;
   restartSyncTimer();
   updateGithubButton();
   $('#githubForm').reset();
@@ -516,15 +499,24 @@ $('#deckForm').addEventListener('submit', async (event) => {
   const data = new FormData(form);
   const backImage = data.get('backImage');
   const frameImage = data.get('frameImage');
+  const isCreating = editingDeckIndex === null;
   const deck = {
-    ...(editingDeckIndex === null ? { cartasProntas: 0, descricao: '', simbolo: '✦', cartas: [] } : activeDecks[editingDeckIndex]),
+    ...(isCreating ? { cartasProntas: 0, descricao: '', simbolo: '✦', cartas: [] } : activeDecks[editingDeckIndex]),
     nome: data.get('name'), quantidade: Number(data.get('quantity')), tamanho: data.get('size'),
     material: data.get('material'), espessura: data.get('weight'),
-    imagemVerso: backImage?.size ? await fileToDataUrl(backImage) : (editingDeckIndex === null ? '' : activeDecks[editingDeckIndex].imagemVerso || ''),
-    imagemFrame: frameImage?.size ? await fileToDataUrl(frameImage) : (editingDeckIndex === null ? '' : activeDecks[editingDeckIndex].imagemFrame || '')
+    imagemVerso: backImage?.size ? await fileToDataUrl(backImage) : (isCreating ? '' : activeDecks[editingDeckIndex].imagemVerso || ''),
+    imagemFrame: frameImage?.size ? await fileToDataUrl(frameImage) : (isCreating ? '' : activeDecks[editingDeckIndex].imagemFrame || '')
   };
-  if (editingDeckIndex === null) activeDecks.push(deck);
-  else activeDecks[editingDeckIndex] = deck;
+  if (isCreating) {
+    activeDecks.push(deck);
+    const usedFiles = new Set(activeDeckFiles);
+    const base = slugify(deck.nome);
+    let file = `${base}.json`;
+    let suffix = 2;
+    while (usedFiles.has(file)) file = `${base}-${suffix++}.json`;
+    activeDeckFiles.push(file);
+    editingDeckIndex = activeDecks.length - 1;
+  } else activeDecks[editingDeckIndex] = deck;
   const storedDecks = readLocalJson('card-builder-decks', {});
   const savedDecks = Array.isArray(storedDecks) ? {} : storedDecks;
   savedDecks[activeProject.path] = activeDecks;
@@ -534,16 +526,60 @@ $('#deckForm').addEventListener('submit', async (event) => {
     const localProjects = readLocalJson('card-builder-projects', []).map((project) => project.path === activeProject.path ? activeProject : project);
     localStorage.setItem('card-builder-projects', JSON.stringify(localProjects));
   }
-  markLocalSave();
+  queueGithubFile(deckGithubPath(editingDeckIndex), deck);
+  if (isCreating) {
+    queueGithubFile(`projetos/${activeProject.path}/projeto.json`, {
+      nome: activeProject.nome,
+      sigla: activeProject.sigla,
+      descricao: activeProject.descricao,
+      ...(activeProject.imagem ? { imagem: activeProject.imagem } : {}),
+      baralhos: activeDeckFiles,
+      diario: typeof activeProject.diario === 'string' ? activeProject.diario : 'diario/paginas.json'
+    });
+  }
   syncCompletedSave();
   renderDecks(activeDecks);
   $('#deckCount').textContent = activeDecks.length;
   $('#cardCount').textContent = activeDecks.reduce((total, item) => total + item.quantidade, 0);
   $('#navDeckCount').textContent = activeDecks.length;
   deckDialog.close();
-  showToast(editingDeckIndex === null ? 'Baralho criado' : 'Baralho atualizado', `${data.get('name')} foi salvo localmente.`);
+  showToast(isCreating ? 'Baralho criado' : 'Baralho atualizado', `${data.get('name')} foi salvo localmente.`);
   form.reset();
   editingDeckIndex = null;
+});
+
+$('#cardForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  if (!form.reportValidity() || viewingDeckIndex === null || editingCardIndex === null) return;
+  const deck = activeDecks[viewingDeckIndex];
+  const cards = deckCards(deck);
+  const previousCard = cards[editingCardIndex];
+  const data = new FormData(form);
+  const image = data.get('image');
+  cards[editingCardIndex] = {
+    ...previousCard,
+    titulo: data.get('title').trim(),
+    descricao: data.get('description').trim(),
+    imagem: image?.size ? await fileToDataUrl(image) : previousCard.imagem || ''
+  };
+  deck.cartas = cards;
+  deck.cartasProntas = cards.filter((card) => card.titulo && card.descricao).length;
+  activeDecks[viewingDeckIndex] = deck;
+  const storedDecks = readLocalJson('card-builder-decks', {});
+  const savedDecks = Array.isArray(storedDecks) ? {} : storedDecks;
+  savedDecks[activeProject.path] = activeDecks;
+  localStorage.setItem('card-builder-decks', JSON.stringify(savedDecks));
+  if (activeProject.local) {
+    activeProject.baralhos = activeDecks;
+    localStorage.setItem('card-builder-projects', JSON.stringify(readLocalJson('card-builder-projects', []).map((project) => project.path === activeProject.path ? activeProject : project)));
+  }
+  queueGithubFile(deckGithubPath(viewingDeckIndex), deck);
+  syncCompletedSave();
+  cardPreviewDialog.close();
+  openDeckPage(viewingDeckIndex);
+  showToast('Carta atualizada', `${cards[editingCardIndex].titulo} foi salva e enviada para a fila do GitHub.`);
+  editingCardIndex = null;
 });
 
 $('#projectForm').addEventListener('submit', async (event) => {
@@ -566,7 +602,12 @@ $('#projectForm').addEventListener('submit', async (event) => {
   const localProjects = readLocalJson('card-builder-projects', []);
   localProjects.push(project);
   localStorage.setItem('card-builder-projects', JSON.stringify(localProjects));
-  markLocalSave();
+  queueGithubFile('projetos/index.json', { projetos: [...projects.map((item) => item.path), project.path] });
+  queueGithubFile(`projetos/${project.path}/projeto.json`, {
+    nome: project.nome, sigla: project.sigla, descricao: project.descricao, imagem: project.imagem,
+    baralhos: [], diario: 'diario/paginas.json'
+  });
+  queueGithubFile(`projetos/${project.path}/diario/paginas.json`, []);
   syncCompletedSave();
   projects.push(project);
   renderProjects();
@@ -604,7 +645,6 @@ $('#deleteProjectForm').addEventListener('submit', (event) => {
     localStorage.setItem('card-builder-deleted-projects', JSON.stringify(deletedProjects));
   }
   projects = projects.filter((project) => project.path !== activeProject.path);
-  markLocalSave();
   syncCompletedSave();
   deleteProjectDialog.close();
   renderProjects();
@@ -642,7 +682,8 @@ $('#noteForm').addEventListener('submit', (event) => {
     const localProjects = readLocalJson('card-builder-projects', []).map((project) => project.path === activeProject.path ? activeProject : project);
     localStorage.setItem('card-builder-projects', JSON.stringify(localProjects));
   }
-  markLocalSave();
+  const diaryPath = typeof activeProject.diario === 'string' ? activeProject.diario : 'diario/paginas.json';
+  queueGithubFile(`projetos/${activeProject.path}/${diaryPath}`, diaryEntries);
   syncCompletedSave();
   renderDiary();
   $('#diaryCount').textContent = diaryEntries.length;
@@ -661,18 +702,7 @@ function showToast(title, message) {
   window.toastTimeout = setTimeout(() => toast.classList.remove('show'), 3200);
 }
 
-function markLocalSave() {
-  const status = $('#saveStatus');
-  const savedAt = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  status.className = 'save-status';
-  status.querySelector('strong').textContent = 'Alterações salvas';
-  status.querySelector('small').textContent = `Salvo neste navegador às ${savedAt}.`;
-}
 
-['projectForm', 'deckForm', 'noteForm'].forEach((formId) => {
-  document.getElementById(formId).addEventListener('input', registerChange);
-  document.getElementById(formId).addEventListener('change', registerChange);
-});
 
 document.addEventListener('click', (event) => {
   if (!projectSwitcher.contains(event.target) && !projectMenu.contains(event.target)) {
