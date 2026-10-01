@@ -34,6 +34,6 @@ A primeira versão deve compor título, texto e imagem em HTML/CSS. Isso mantém
 
 ## Persistência e GitHub
 
-Cada criação ou edição concluída é salva imediatamente no `localStorage`. Campos de projeto, baralho e diário em edição também são considerados rascunhos, mesmo antes do envio do formulário.
+Cada criação ou edição concluída é salva imediatamente no `localStorage`, mantendo o trabalho disponível neste navegador.
 
-A conexão com o GitHub valida o repositório e o Personal Access Token diretamente pela API. A credencial permanece apenas na memória da aba e é descartada ao desconectar, recarregar ou fechar a página — ela nunca é incluída no JSON do projeto, em commits ou em logs. Enquanto a conexão está ativa, a interface exibe uma contagem regressiva de 60 segundos e publica em `.card-builder/autosave.json` somente quando o conteúdo diverge do último sync. Concluir uma alteração força o envio imediatamente e reinicia a contagem.
+A conexão com o GitHub valida o repositório e o Personal Access Token diretamente pela API. A credencial permanece apenas na memória da aba e é descartada ao desconectar, recarregar ou fechar a página — ela nunca é incluída no JSON do projeto, em commits ou em logs. Alterações concluídas entram em uma fila e atualizam imediatamente os arquivos JSON correspondentes em `projetos/`; se algum envio falhar, a fila é preservada para uma nova tentativa automática. Enquanto a conexão está ativa, também é feita uma verificação da fila a cada 60 segundos.

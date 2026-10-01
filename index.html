@@ -36,9 +36,6 @@
       </nav>
 
       <div class="sidebar-foot">
-        <div class="storage-copy"><span>Armazenamento</span><strong>1,2 GB de 5 GB</strong></div>
-        <div class="storage-bar"><span></span></div>
-        <p class="save-status" id="saveStatus" role="status" aria-live="polite"><span aria-hidden="true">✓</span><span><strong>Salvamento local ativo</strong><small>Cada alteração é salva imediatamente.</small><small id="syncCountdown" hidden></small></span></p>
         <button class="github-button" id="githubButton"><span aria-hidden="true">◉</span><span><small>GITHUB</small><strong>Conectar ao GitHub</strong></span><i aria-hidden="true"></i></button>
       </div>
     </aside>
@@ -129,7 +126,13 @@
   <dialog id="cardPreviewDialog" class="dialog card-preview-dialog">
     <div class="card-preview-layout">
       <div id="tcgCardPreview" class="tcg-card"></div>
-      <div class="preview-copy"><p class="eyebrow">PREVIEW DA CARTA</p><h2 id="previewCardTitle"></h2><p>Composição em HTML com o frame, a arte e o conteúdo definidos para esta carta.</p><button type="button" data-close-dialog class="secondary-button">Fechar preview</button></div>
+      <form id="cardForm" class="card-edit-form">
+        <div><p class="eyebrow">EDITAR CARTA</p><h2>Conteúdo da carta</h2></div>
+        <label>Título<input name="title" required placeholder="Título da carta"></label>
+        <label>Descrição<textarea name="description" required rows="6" placeholder="Texto ou efeito da carta"></textarea></label>
+        <label>Imagem<input name="image" type="file" accept="image/*"><small id="cardImageHint">Escolha uma imagem para substituir a atual.</small></label>
+        <div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button">Salvar edição</button></div>
+      </form>
     </div>
   </dialog>
 
@@ -157,7 +160,7 @@
   </dialog>
 
   <dialog id="githubDialog" class="dialog compact">
-    <form id="githubForm"><div class="dialog-head"><div><p class="eyebrow">INTEGRAÇÃO SEGURA</p><h2>Conectar ao GitHub</h2></div><button type="button" data-close-dialog aria-label="Fechar">×</button></div><p class="dialog-intro">Informe um repositório e um Personal Access Token. Vamos validar o acesso diretamente no GitHub; o token permanece somente na memória desta aba.</p><label>Repositório<input name="repository" required autocomplete="off" placeholder="organização/repositório" aria-describedby="githubFeedback"></label><label>Personal Access Token<input name="token" required type="password" autocomplete="off" placeholder="github_pat_••••••••" aria-describedby="githubFeedback"></label><p class="connection-feedback" id="githubFeedback" role="status" aria-live="polite">Ainda não conectado.</p><div class="sync-explanation"><strong>Como o salvamento funciona?</strong><span>Enquanto conectado, alterações são sincronizadas a cada minuto. Rascunhos ainda não salvos também entram no próximo envio; ao concluir uma alteração, o envio é imediato.</span></div><div class="security-note">⌾ O token não é salvo no navegador, nos arquivos do projeto ou em logs.</div><div class="dialog-actions"><button type="button" id="disconnectGithub" class="secondary-button" hidden>Desconectar</button><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button" id="connectGithub">Conectar</button></div></form>
+    <form id="githubForm"><div class="dialog-head"><div><p class="eyebrow">INTEGRAÇÃO SEGURA</p><h2>Conectar ao GitHub</h2></div><button type="button" data-close-dialog aria-label="Fechar">×</button></div><p class="dialog-intro">Informe um repositório e um Personal Access Token. Vamos validar o acesso diretamente no GitHub; o token permanece somente na memória desta aba.</p><label>Repositório<input name="repository" required autocomplete="off" placeholder="organização/repositório" aria-describedby="githubFeedback"></label><label>Personal Access Token<input name="token" required type="password" autocomplete="off" placeholder="github_pat_••••••••" aria-describedby="githubFeedback"></label><p class="connection-feedback" id="githubFeedback" role="status" aria-live="polite">Ainda não conectado.</p><div class="sync-explanation"><strong>Como o salvamento funciona?</strong><span>Ao concluir uma alteração, o arquivo JSON correspondente do projeto é enviado imediatamente. Envios pendentes são tentados novamente a cada minuto.</span></div><div class="security-note">⌾ O token não é salvo no navegador, nos arquivos do projeto ou em logs.</div><div class="dialog-actions"><button type="button" id="disconnectGithub" class="secondary-button" hidden>Desconectar</button><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button" id="connectGithub">Conectar</button></div></form>
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"><span>✓</span><p><strong>Baralho criado</strong><small>Seu rascunho foi salvo localmente.</small></p></div>
