@@ -294,7 +294,7 @@ function renderDecks(decks) {
     const progressClass = index % 3 === 1 ? 'amber' : index % 3 === 2 ? 'teal' : '';
     return `<article class="deck-card" data-name="${escapeHtml(deck.nome)}" data-deck-index="${index}" tabindex="0" role="button" aria-label="Editar baralho ${escapeHtml(deck.nome)}">
       <div class="deck-preview ${theme}"><span class="card-back back-one">${escapeHtml(deck.simbolo || '✦')}</span><span class="card-back back-two">${escapeHtml(deck.simbolo || '◆')}</span></div>
-      <div class="deck-body"><div class="deck-title"><h3>${escapeHtml(deck.nome)}</h3></div><p>${escapeHtml(deck.descricao)}</p><div class="progress-label"><span>${deck.cartasProntas} de ${deck.quantidade} cartas</span><strong>${progress}%</strong></div><div class="progress ${progressClass}"><span style="width:${progress}%"></span></div><div class="deck-meta"><span>◫ ${escapeHtml(deck.tamanho)}</span><span>◉ ${escapeHtml(deck.espessura)}</span></div></div>
+      <div class="deck-body"><div class="deck-title"><h3>${escapeHtml(deck.nome)}</h3></div><p>${escapeHtml(deck.descricao)}</p><div class="progress-label"><span>${deck.cartasProntas} de ${deck.quantidade} cartas</span><strong>${progress}%</strong></div><div class="progress ${progressClass}"><span style="width:${progress}%"></span></div><div class="deck-meta"><span>◫ ${escapeHtml(deckSizeLabel(deck))}</span><span>◉ ${escapeHtml(deck.espessura)}</span></div></div>
     </article>`;
   }).join('');
   $('#deckGrid').innerHTML = `${cards}<button class="add-deck-card" id="addDeckCard"><span>＋</span><strong>Criar novo baralho</strong><small>Defina formato, materiais e comece a criar.</small></button>`;
@@ -311,6 +311,11 @@ function renderDecks(decks) {
   $('#addDeckCard').addEventListener('click', () => openDeckDialog());
 }
 
+function deckSizeLabel(deck) {
+  if (deck.tamanho !== 'Personalizado' || !deck.tamanhoPersonalizado) return deck.tamanho;
+  return `${deck.tamanhoPersonalizado.largura} × ${deck.tamanhoPersonalizado.altura} mm`;
+}
+
 function openDeckDialog(index = null) {
   editingDeckIndex = index;
   const form = $('#deckForm');
@@ -325,9 +330,12 @@ function openDeckDialog(index = null) {
     form.elements.name.value = deck.nome;
     form.elements.quantity.value = deck.quantidade;
     setSelectValue(form.elements.size, deck.tamanho);
+    form.elements.customWidth.value = deck.tamanhoPersonalizado?.largura || '';
+    form.elements.customHeight.value = deck.tamanhoPersonalizado?.altura || '';
     setSelectValue(form.elements.material, deck.material);
     setSelectValue(form.elements.weight, deck.espessura);
   }
+  updateCustomCardSizeFields();
   deckDialog.showModal();
 }
 
@@ -337,6 +345,28 @@ function deckCards(deck) {
     descricao: 'Esta carta ainda não possui conteúdo.',
     imagem: ''
   });
+}
+
+function cardDimensions(deck) {
+  if (deck.tamanho === 'Personalizado' && deck.tamanhoPersonalizado) {
+    const width = Number(deck.tamanhoPersonalizado.largura);
+    const height = Number(deck.tamanhoPersonalizado.altura);
+    if (width > 0 && height > 0) return { width, height };
+  }
+  const dimensions = String(deck.tamanho || '').match(/([\d.,]+)\s*[×x]\s*([\d.,]+)/i);
+  if (!dimensions) return { width: 63, height: 88 };
+  return {
+    width: Number(dimensions[1].replace(',', '.')),
+    height: Number(dimensions[2].replace(',', '.'))
+  };
+}
+
+function updateCustomCardSizeFields() {
+  const form = $('#deckForm');
+  const isCustom = form.elements.size.value === 'Personalizado';
+  $('#customCardSize').hidden = !isCustom;
+  form.elements.customWidth.required = isCustom;
+  form.elements.customHeight.required = isCustom;
 }
 
 function openDeckPage(index) {
@@ -371,6 +401,8 @@ function openCardPreview(deck, card, cardIndex) {
   form.elements.description.value = card.descricao || '';
   $('#cardImageHint').textContent = card.imagem ? 'A imagem atual será mantida se nenhum novo arquivo for escolhido.' : 'Escolha uma imagem para esta carta.';
   const frameStyle = deck.imagemFrame ? `background-image:url('${escapeHtml(deck.imagemFrame)}')` : '';
+  const { width, height } = cardDimensions(deck);
+  $('#tcgCardPreview').style.aspectRatio = `${width} / ${height}`;
   $('#tcgCardPreview').innerHTML = `
     <div class="tcg-frame" style="${frameStyle}">
       <header>${escapeHtml(title)}</header>
@@ -561,6 +593,8 @@ $('#globalSearch').addEventListener('input', (event) => {
   }
 });
 
+$('#deckForm').elements.size.addEventListener('change', updateCustomCardSizeFields);
+
 $('#deckForm').addEventListener('submit', async (event) => {
   event.preventDefault();
   const form = $('#deckForm');
@@ -573,6 +607,9 @@ $('#deckForm').addEventListener('submit', async (event) => {
     ...(isCreating ? { cartasProntas: 0, descricao: '', simbolo: '✦', cartas: [] } : activeDecks[editingDeckIndex]),
     nome: data.get('name'), quantidade: Number(data.get('quantity')), tamanho: data.get('size'),
     material: data.get('material'), espessura: data.get('weight'),
+    tamanhoPersonalizado: data.get('size') === 'Personalizado'
+      ? { largura: Number(data.get('customWidth')), altura: Number(data.get('customHeight')) }
+      : null,
     imagemVerso: backImage?.size ? await fileToDataUrl(backImage) : (isCreating ? '' : activeDecks[editingDeckIndex].imagemVerso || ''),
     imagemFrame: frameImage?.size ? await fileToDataUrl(frameImage) : (isCreating ? '' : activeDecks[editingDeckIndex].imagemFrame || '')
   };

@@ -11,3 +11,5 @@
 .save-status.syncing{background:#e6e2f0;color:var(--purple-dark)}.save-status.sync-error{background:#f1ded9;color:#91493f}#syncCountdown{font-variant-numeric:tabular-nums}
 
 .card-edit-form{padding:0!important}.card-edit-form h2{font:800 25px Manrope;margin:0}.card-edit-form label small{color:var(--muted);font-size:10px;font-weight:400}.card-edit-form .dialog-actions{justify-content:flex-start}.github-button.syncing i{animation:sync-pulse .8s ease-in-out infinite alternate}@keyframes sync-pulse{to{transform:scale(1.7);opacity:.45}}@media(max-width:760px){.card-preview-layout{max-height:calc(100vh - 30px);overflow:auto}.card-edit-form .dialog-actions{position:static}}
+
+.custom-card-size{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0 0;padding:0;border:0}.custom-card-size[hidden]{display:none}.custom-card-size legend{padding:0;color:var(--purple);font-size:10px;font-weight:800;letter-spacing:.1em}.custom-card-size label{margin-top:7px}@media(max-width:760px){.custom-card-size{grid-template-columns:1fr}}
