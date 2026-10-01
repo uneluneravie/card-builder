@@ -29,8 +29,7 @@ const SYNC_SECONDS = 60;
 function githubHeaders() {
   return {
     Accept: 'application/vnd.github+json',
-    Authorization: `Bearer ${githubConnection.token}`,
-    'X-GitHub-Api-Version': '2022-11-28'
+    Authorization: `Bearer ${githubConnection.token}`
   };
 }
 
@@ -442,8 +441,7 @@ $('#githubForm').addEventListener('submit', async (event) => {
     const response = await fetch(`https://api.github.com/repos/${encodeURIComponent(repository.split('/')[0])}/${encodeURIComponent(repository.split('/')[1])}`, {
       headers: {
         Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${token}`,
-        'X-GitHub-Api-Version': '2022-11-28'
+        Authorization: `Bearer ${token}`
       }
     });
     if (!response.ok) {
