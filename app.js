@@ -7,6 +7,7 @@ const deckDialog = $('#deckDialog');
 const noteDialog = $('#noteDialog');
 const projectDialog = $('#projectDialog');
 const deleteProjectDialog = $('#deleteProjectDialog');
+const githubDialog = $('#githubDialog');
 const toast = $('#toast');
 let projects = [];
 let activeProject = null;
@@ -14,6 +15,7 @@ let diaryEntries = [];
 let editingDiaryIndex = null;
 let activeDecks = [];
 let editingDeckIndex = null;
+let githubConnection = null;
 
 projectSwitcher.addEventListener('click', () => {
   const willOpen = projectMenu.hidden;
@@ -225,8 +227,90 @@ $('#newNoteButton').addEventListener('click', () => {
   $('#saveNote').textContent = 'Salvar página';
   noteDialog.showModal();
 });
-$('#githubButton').addEventListener('click', () => $('#githubDialog').showModal());
+$('#githubButton').addEventListener('click', () => {
+  const form = $('#githubForm');
+  $('#githubFeedback').textContent = githubConnection
+    ? `Conectado a ${githubConnection.repository}.`
+    : 'Ainda não conectado.';
+  $('#githubFeedback').className = `connection-feedback${githubConnection ? ' success' : ''}`;
+  $('#disconnectGithub').hidden = !githubConnection;
+  form.elements.repository.value = githubConnection?.repository || '';
+  form.elements.token.value = '';
+  githubDialog.showModal();
+});
 $('#menuButton').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
+
+$('#githubForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  if (!form.reportValidity()) return;
+  const repository = form.elements.repository.value.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '').replace(/\/$/, '');
+  const token = form.elements.token.value.trim();
+  const feedback = $('#githubFeedback');
+  const connectButton = $('#connectGithub');
+
+  if (!/^[^/\s]+\/[^/\s]+$/.test(repository)) {
+    feedback.textContent = 'Use o formato organização/repositório.';
+    feedback.className = 'connection-feedback error';
+    form.elements.repository.focus();
+    return;
+  }
+
+  connectButton.disabled = true;
+  connectButton.textContent = 'Verificando…';
+  feedback.textContent = 'Verificando o acesso no GitHub…';
+  feedback.className = 'connection-feedback';
+
+  try {
+    const response = await fetch(`https://api.github.com/repos/${encodeURIComponent(repository.split('/')[0])}/${encodeURIComponent(repository.split('/')[1])}`, {
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${token}`,
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+    if (!response.ok) {
+      if (response.status === 401) throw new Error('Token inválido ou expirado. Confira o PAT e tente novamente.');
+      if (response.status === 404) throw new Error('Repositório não encontrado ou sem acesso para este token.');
+      throw new Error(`O GitHub não conseguiu validar a conexão (erro ${response.status}).`);
+    }
+
+    const repositoryData = await response.json();
+    githubConnection = { repository: repositoryData.full_name, token };
+    updateGithubButton();
+    feedback.textContent = `Conectado a ${repositoryData.full_name}.`;
+    feedback.className = 'connection-feedback success';
+    $('#disconnectGithub').hidden = false;
+    form.elements.token.value = '';
+    showToast('GitHub conectado', `Acesso a ${repositoryData.full_name} validado nesta sessão.`);
+  } catch (error) {
+    githubConnection = null;
+    updateGithubButton();
+    feedback.textContent = error instanceof TypeError
+      ? 'Não foi possível acessar o GitHub. Verifique sua conexão e tente novamente.'
+      : error.message;
+    feedback.className = 'connection-feedback error';
+  } finally {
+    connectButton.disabled = false;
+    connectButton.textContent = 'Conectar';
+  }
+});
+
+$('#disconnectGithub').addEventListener('click', () => {
+  githubConnection = null;
+  updateGithubButton();
+  $('#githubForm').reset();
+  $('#githubFeedback').textContent = 'Conexão encerrada. O token foi removido da memória desta aba.';
+  $('#githubFeedback').className = 'connection-feedback';
+  $('#disconnectGithub').hidden = true;
+  showToast('GitHub desconectado', 'O token desta sessão foi descartado.');
+});
+
+function updateGithubButton() {
+  const button = $('#githubButton');
+  button.classList.toggle('connected', Boolean(githubConnection));
+  button.querySelector('strong').textContent = githubConnection ? githubConnection.repository : 'Conectar ao GitHub';
+}
 
 $$('.main-nav a').forEach((link) => link.addEventListener('click', () => {
   if (link.dataset.view === 'visao') showHome();
@@ -269,6 +353,7 @@ $('#deckForm').addEventListener('submit', (event) => {
     const localProjects = readLocalJson('card-builder-projects', []).map((project) => project.path === activeProject.path ? activeProject : project);
     localStorage.setItem('card-builder-projects', JSON.stringify(localProjects));
   }
+  markLocalSave();
   renderDecks(activeDecks);
   $('#deckCount').textContent = activeDecks.length;
   $('#cardCount').textContent = activeDecks.reduce((total, item) => total + item.quantidade, 0);
@@ -299,6 +384,7 @@ $('#projectForm').addEventListener('submit', async (event) => {
   const localProjects = readLocalJson('card-builder-projects', []);
   localProjects.push(project);
   localStorage.setItem('card-builder-projects', JSON.stringify(localProjects));
+  markLocalSave();
   projects.push(project);
   renderProjects();
   renderProjectMenu();
@@ -335,6 +421,7 @@ $('#deleteProjectForm').addEventListener('submit', (event) => {
     localStorage.setItem('card-builder-deleted-projects', JSON.stringify(deletedProjects));
   }
   projects = projects.filter((project) => project.path !== activeProject.path);
+  markLocalSave();
   deleteProjectDialog.close();
   renderProjects();
   renderProjectMenu();
@@ -371,6 +458,7 @@ $('#noteForm').addEventListener('submit', (event) => {
     const localProjects = readLocalJson('card-builder-projects', []).map((project) => project.path === activeProject.path ? activeProject : project);
     localStorage.setItem('card-builder-projects', JSON.stringify(localProjects));
   }
+  markLocalSave();
   renderDiary();
   $('#diaryCount').textContent = diaryEntries.length;
   $('#navDiaryCount').textContent = diaryEntries.length;
@@ -386,6 +474,14 @@ function showToast(title, message) {
   toast.classList.add('show');
   clearTimeout(window.toastTimeout);
   window.toastTimeout = setTimeout(() => toast.classList.remove('show'), 3200);
+}
+
+function markLocalSave() {
+  const status = $('#saveStatus');
+  const savedAt = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  status.className = 'save-status';
+  status.querySelector('strong').textContent = 'Alterações salvas';
+  status.querySelector('small').textContent = `Salvo neste navegador às ${savedAt}.`;
 }
 
 document.addEventListener('click', (event) => {

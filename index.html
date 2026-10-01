@@ -39,7 +39,8 @@
       <div class="sidebar-foot">
         <div class="storage-copy"><span>Armazenamento</span><strong>1,2 GB de 5 GB</strong></div>
         <div class="storage-bar"><span></span></div>
-        <button class="github-button" id="githubButton"><span aria-hidden="true">◉</span><span><small>SINCRONIZAÇÃO</small><strong>GitHub conectado</strong></span><i></i></button>
+        <p class="save-status" id="saveStatus" role="status" aria-live="polite"><span aria-hidden="true">✓</span><span><strong>Salvamento local ativo</strong><small>Cada alteração é salva imediatamente.</small></span></p>
+        <button class="github-button" id="githubButton"><span aria-hidden="true">◉</span><span><small>GITHUB</small><strong>Conectar ao GitHub</strong></span><i aria-hidden="true"></i></button>
       </div>
     </aside>
 
@@ -142,7 +143,7 @@
   </dialog>
 
   <dialog id="githubDialog" class="dialog compact">
-    <form method="dialog"><div class="dialog-head"><div><p class="eyebrow">INTEGRAÇÃO SEGURA</p><h2>Conectar ao GitHub</h2></div><button value="cancel">×</button></div><p class="dialog-intro">Use um Personal Access Token com acesso apenas ao repositório do projeto. O token fica somente nesta sessão.</p><label>Repositório<input placeholder="organização/repositório"></label><label>Personal Access Token<input type="password" placeholder="github_pat_••••••••"></label><div class="security-note">⌾ Nunca salvamos seu token nos arquivos do projeto.</div><div class="dialog-actions"><button value="cancel" class="secondary-button">Cancelar</button><button value="default" class="primary-button">Conectar</button></div></form>
+    <form id="githubForm"><div class="dialog-head"><div><p class="eyebrow">INTEGRAÇÃO SEGURA</p><h2>Conectar ao GitHub</h2></div><button type="button" data-close-dialog aria-label="Fechar">×</button></div><p class="dialog-intro">Informe um repositório e um Personal Access Token. Vamos validar o acesso diretamente no GitHub; o token permanece somente na memória desta aba.</p><label>Repositório<input name="repository" required autocomplete="off" placeholder="organização/repositório" aria-describedby="githubFeedback"></label><label>Personal Access Token<input name="token" required type="password" autocomplete="off" placeholder="github_pat_••••••••" aria-describedby="githubFeedback"></label><p class="connection-feedback" id="githubFeedback" role="status" aria-live="polite">Ainda não conectado.</p><div class="sync-explanation"><strong>Como o salvamento funciona?</strong><span>Cada alteração é salva imediatamente neste navegador. Por enquanto, conectar valida o acesso, mas não envia alterações ao GitHub automaticamente.</span></div><div class="security-note">⌾ O token não é salvo no navegador, nos arquivos do projeto ou em logs.</div><div class="dialog-actions"><button type="button" id="disconnectGithub" class="secondary-button" hidden>Desconectar</button><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button" id="connectGithub">Conectar</button></div></form>
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"><span>✓</span><p><strong>Baralho criado</strong><small>Seu rascunho foi salvo localmente.</small></p></div>

@@ -34,4 +34,6 @@ A primeira versão deve compor título, texto e imagem em HTML/CSS. Isso mantém
 
 ## Persistência e GitHub
 
-O protótipo salva rascunhos localmente. A integração planejada usa a API do GitHub com um fine-grained Personal Access Token limitado ao repositório escolhido. O token deve permanecer apenas na memória da sessão e nunca ser incluído no JSON do projeto, em commits ou em logs.
+Cada criação ou edição é salva imediatamente no `localStorage`; não há um intervalo periódico de salvamento. A interface confirma o salvamento local e informa o horário da última alteração.
+
+A conexão com o GitHub valida o repositório e o Personal Access Token diretamente pela API. A credencial permanece apenas na memória da aba e é descartada ao desconectar, recarregar ou fechar a página — ela nunca é incluída no JSON do projeto, em commits ou em logs. Nesta versão, conectar a conta não publica os rascunhos: o envio automático ao GitHub ainda não está disponível e essa limitação é informada na própria tela de conexão.
