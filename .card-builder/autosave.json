@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "localData": {
+    "card-builder-deleted-projects": [
+      "orbita-7"
+    ]
+  },
+  "drafts": {
+    "projectForm": {
+      "name": "",
+      "description": "",
+      "image": []
+    },
+    "deckForm": {
+      "name": "",
+      "quantity": "54",
+      "size": "63 × 88 mm (poker)",
+      "material": "Couche fosco",
+      "weight": "300 g/m²",
+      "backImage": [],
+      "frameImage": []
+    },
+    "noteForm": {
+      "title": "",
+      "content": ""
+    }
+  }
+}
