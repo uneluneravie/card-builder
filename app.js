@@ -28,6 +28,7 @@ let lastSyncedAt = '';
 const pendingGithubFiles = new Map();
 const SYNC_SECONDS = 60;
 const DATA_RESET_VERSION = '2026-10-01';
+const EMPTY_PROJECT_INDEX = Object.freeze({ projetos: [] });
 
 function resetLegacyProjectsOnce() {
   if (localStorage.getItem('card-builder-reset-version') === DATA_RESET_VERSION) return;
@@ -156,22 +157,45 @@ const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (character)
 
 async function loadProjects() {
   try {
-    const response = await fetch('projetos/index.json');
-    if (!response.ok) throw new Error('Não foi possível abrir o índice de projetos.');
-    const index = await response.json();
+    const index = githubConnection
+      ? await loadGithubJson('projetos/index.json', EMPTY_PROJECT_INDEX)
+      : await loadJson('projetos/index.json');
     const fileProjects = await Promise.all(index.projetos.map(async (path) => {
-      const projectResponse = await fetch(`projetos/${path}/projeto.json`);
-      if (!projectResponse.ok) throw new Error(`Não foi possível abrir o projeto ${path}.`);
-      return { ...(await projectResponse.json()), path };
+      const project = githubConnection
+        ? await loadGithubJson(`projetos/${path}/projeto.json`)
+        : await loadJson(`projetos/${path}/projeto.json`);
+      return { ...project, path };
     }));
-    const localProjects = readLocalJson('card-builder-projects', []);
-    const deletedProjects = readLocalJson('card-builder-deleted-projects', []);
-    projects = [...fileProjects.filter((project) => !deletedProjects.includes(project.path)), ...localProjects];
+    projects = fileProjects;
     renderProjects();
     renderProjectMenu();
   } catch (error) {
-    $('#projectGrid').innerHTML = `<p class="error-state">${escapeHtml(error.message)} Execute a aplicação por meio de um servidor local.</p>`;
+    const hint = githubConnection ? ' Confira o conteúdo e as permissões do repositório.' : ' Execute a aplicação por meio de um servidor local.';
+    $('#projectGrid').innerHTML = `<p class="error-state">${escapeHtml(error.message)}${hint}</p>`;
+    if (githubConnection) throw error;
   }
+}
+
+async function loadGithubJson(path, notFoundFallback) {
+  const response = await fetch(syncApiUrl(path), { headers: githubHeaders() });
+  if (response.status === 404 && arguments.length > 1) {
+    return JSON.parse(JSON.stringify(notFoundFallback));
+  }
+  if (!response.ok) throw new Error(`Não foi possível carregar ${path} do GitHub (${response.status}).`);
+  const file = await response.json();
+  if (!file.content) throw new Error(`${path} não é um arquivo JSON válido no GitHub.`);
+  try {
+    const decoded = decodeURIComponent(escape(atob(file.content.replace(/\s/g, ''))));
+    return JSON.parse(decoded);
+  } catch {
+    throw new Error(`O conteúdo de ${path} não é um JSON válido.`);
+  }
+}
+
+function discardLocalProjectChanges() {
+  ['card-builder-projects', 'card-builder-deleted-projects', 'card-builder-decks', 'card-builder-notes']
+    .forEach((key) => localStorage.removeItem(key));
+  pendingGithubFiles.clear();
 }
 
 function renderProjects() {
@@ -214,17 +238,19 @@ async function openProject(path) {
   $('[data-view="baralhos"]').href = `#projeto/${path}/baralhos`;
 
   try {
-    const decks = project.local ? project.baralhos : await Promise.all(project.baralhos.map(async (file) => {
-      const response = await fetch(`projetos/${path}/baralhos/${file}`);
-      if (!response.ok) throw new Error(`Não foi possível abrir ${file}.`);
-      return response.json();
-    }));
+    const decks = project.local ? project.baralhos : await Promise.all(project.baralhos.map((file) => (
+      githubConnection
+        ? loadGithubJson(`projetos/${path}/baralhos/${file}`)
+        : loadJson(`projetos/${path}/baralhos/${file}`)
+    )));
     activeDeckFiles = project.local
       ? decks.map((deck, index) => deck.arquivo || `${slugify(deck.nome || `baralho-${index + 1}`)}.json`)
       : [...project.baralhos];
     const diary = project.local
       ? project.diario
-      : await loadJson(`projetos/${path}/${project.diario}`);
+      : githubConnection
+        ? await loadGithubJson(`projetos/${path}/${project.diario}`)
+        : await loadJson(`projetos/${path}/${project.diario}`);
     const storedDecks = readLocalJson('card-builder-decks', {});
     const savedDecks = Array.isArray(storedDecks) ? {} : storedDecks;
     activeDecks = savedDecks[path] || decks;
@@ -532,6 +558,15 @@ $('#githubForm').addEventListener('submit', async (event) => {
 
     const repositoryData = await response.json();
     githubConnection = { repository: repositoryData.full_name, token };
+    feedback.textContent = 'Acesso validado. Carregando os projetos do repositório…';
+    try {
+      await loadProjects();
+    } catch (error) {
+      githubConnection = null;
+      throw error;
+    }
+    discardLocalProjectChanges();
+    showHome();
     lastSyncError = '';
     lastSyncedAt = '';
     restartSyncTimer();
@@ -539,8 +574,8 @@ $('#githubForm').addEventListener('submit', async (event) => {
     feedback.textContent = `Conectado a ${repositoryData.full_name}.`;
     feedback.className = 'connection-feedback success';
     $('#disconnectGithub').hidden = false;
-    form.elements.token.value = '';
-    showToast('GitHub conectado', `Acesso a ${repositoryData.full_name} validado nesta sessão.`);
+    githubDialog.close();
+    showToast('GitHub conectado', `Os projetos de ${repositoryData.full_name} substituíram os dados locais.`);
   } catch (error) {
     githubConnection = null;
     updateGithubButton();
@@ -550,7 +585,7 @@ $('#githubForm').addEventListener('submit', async (event) => {
     feedback.className = 'connection-feedback error';
   } finally {
     connectButton.disabled = false;
-    connectButton.textContent = 'Conectar';
+    connectButton.textContent = 'Entrar e sincronizar';
   }
 });
 
@@ -818,12 +853,10 @@ document.addEventListener('click', (event) => {
 });
 
 resetLegacyProjectsOnce();
-loadProjects().then(() => {
-  const match = location.hash.match(/^#projeto\/([^/]+)(?:\/(diario|baralhos))?$/);
-  if (match) openProject(match[1]).then(() => {
-    if (match[2]) {
-      updateProjectUrl(match[2]);
-      document.getElementById(match[2]).scrollIntoView();
-    }
-  });
+// A conexão é solicitada em toda nova carga. O navegador pode preencher as
+// credenciais, mas o aplicativo nunca persiste o token por conta própria.
+githubDialog.addEventListener('cancel', (event) => {
+  if (!githubConnection) event.preventDefault();
 });
+githubDialog.showModal();
+$('#githubForm').elements.repository.focus();

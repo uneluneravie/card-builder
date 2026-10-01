@@ -34,6 +34,10 @@ A primeira versão deve compor título, texto e imagem em HTML/CSS. Isso mantém
 
 ## Persistência e GitHub
 
-Cada criação ou edição concluída é salva imediatamente no `localStorage`, mantendo o trabalho disponível neste navegador.
+Ao abrir a aplicação, a conexão com o GitHub é sempre solicitada antes do carregamento dos projetos. O formulário usa os campos semânticos de usuário e senha para que o gerenciador de senhas do navegador possa oferecer o salvamento do repositório e do PAT. O aplicativo não grava o token por conta própria.
 
-A conexão com o GitHub valida o repositório e o Personal Access Token diretamente pela API, usando somente cabeçalhos aceitos nas requisições CORS do navegador. A credencial permanece apenas na memória da aba e é descartada ao desconectar, recarregar ou fechar a página — ela nunca é incluída no JSON do projeto, em commits ou em logs. Alterações concluídas entram em uma fila e atualizam imediatamente os arquivos JSON correspondentes em `projetos/`; se algum envio falhar, a fila é preservada para uma nova tentativa automática. Enquanto a conexão está ativa, também é feita uma verificação da fila a cada 60 segundos.
+Depois da autenticação, `projetos/index.json` e todos os JSON relacionados são lidos diretamente do repositório informado. Esses dados são a fonte de verdade e substituem rascunhos ou exclusões que tenham ficado no armazenamento local.
+
+Se `projetos/index.json` ainda não existir, como em um repositório novo, a aplicação usa um índice vazio como fallback e exibe normalmente o estado sem projetos. O primeiro projeto criado pela interface gera o índice e os demais arquivos necessários no repositório.
+
+A conexão com o GitHub valida o repositório e o Personal Access Token diretamente pela API, usando somente cabeçalhos aceitos nas requisições CORS do navegador. A credencial permanece apenas na memória da aba (ou, mediante autorização do usuário, no cofre de senhas do navegador) e é descartada pelo aplicativo ao desconectar, recarregar ou fechar a página — ela nunca é incluída no JSON do projeto, em commits ou em logs. Alterações concluídas entram em uma fila e atualizam imediatamente os arquivos JSON correspondentes em `projetos/`; se algum envio falhar, a fila é preservada para uma nova tentativa automática. Enquanto a conexão está ativa, também é feita uma verificação da fila a cada 60 segundos.
