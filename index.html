@@ -13,7 +13,7 @@
 <body>
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
-      <a class="brand" href="#" aria-label="Casa de Cartas, início">
+      <a class="brand" id="homeLink" href="#visao" aria-label="Casa de Cartas, início">
         <span class="brand-mark" aria-hidden="true"><span>♢</span></span>
         <span>Casa de Cartas</span>
       </a>
@@ -42,7 +42,7 @@
 
     <main class="main-content">
       <header class="topbar">
-        <button class="icon-button menu-button" id="menuButton" aria-label="Abrir menu">☰</button>
+        <button class="icon-button menu-button" id="menuButton" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false">☰</button>
         <label class="global-search"><span>⌕</span><input id="globalSearch" type="search" placeholder="Buscar cartas, baralhos ou notas..." aria-label="Buscar"></label>
       </header>
 
@@ -113,7 +113,7 @@
       <div class="form-grid">
         <label class="full">Nome do baralho<input name="name" required placeholder="Ex.: Criaturas da Névoa"></label>
         <label>Quantidade de cartas<input name="quantity" type="number" min="1" value="54" required></label>
-        <label>Tamanho<select name="size"><option>63 × 88 mm (poker)</option><option>57 × 89 mm (bridge)</option><option>70 × 120 mm (tarô)</option><option>Personalizado</option></select></label>
+        <label>Tamanho<select name="size"><option>Padrão (63 × 88 mm)</option><option>Mini Chimera (43 × 65 mm)</option><option>57 × 89 mm (bridge)</option><option>70 × 120 mm (tarô)</option><option>Personalizado</option></select></label>
         <label>Material<select name="material"><option>Couche fosco</option><option>Couche brilho</option><option>Linho</option><option>Papel reciclado</option></select></label>
         <label>Espessura<select name="weight"><option>300 g/m²</option><option>310 g/m²</option><option>330 g/m²</option><option>350 g/m²</option></select></label>
         <label>Imagem do verso<input name="backImage" type="file" accept="image/*"></label>

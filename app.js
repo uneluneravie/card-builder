@@ -368,6 +368,17 @@ function showHome() {
   history.replaceState(null, '', '#visao');
 }
 
+function closeMobileMenu() {
+  $('#sidebar').classList.remove('open');
+  $('#menuButton').setAttribute('aria-expanded', 'false');
+}
+
+$('#homeLink').addEventListener('click', (event) => {
+  event.preventDefault();
+  showHome();
+  closeMobileMenu();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 $('#backToProjects').addEventListener('click', showHome);
 $('#backToProject').addEventListener('click', () => {
   $('#deckPage').hidden = true;
@@ -396,7 +407,15 @@ $('#githubButton').addEventListener('click', () => {
   form.elements.token.value = '';
   githubDialog.showModal();
 });
-$('#menuButton').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
+$('#menuButton').addEventListener('click', () => {
+  const isOpen = $('#sidebar').classList.toggle('open');
+  $('#menuButton').setAttribute('aria-expanded', String(isOpen));
+});
+document.addEventListener('click', (event) => {
+  if (window.innerWidth > 760 || !$('#sidebar').classList.contains('open')) return;
+  if ($('#sidebar').contains(event.target) || $('#menuButton').contains(event.target)) return;
+  closeMobileMenu();
+});
 
 $('#githubForm').addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -480,7 +499,7 @@ $$('.main-nav a').forEach((link) => link.addEventListener('click', () => {
   }
   $$('.main-nav a').forEach((item) => item.classList.remove('active'));
   link.classList.add('active');
-  if (window.innerWidth <= 760) $('#sidebar').classList.remove('open');
+  if (window.innerWidth <= 760) closeMobileMenu();
 }));
 
 $('#globalSearch').addEventListener('input', (event) => {
