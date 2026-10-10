@@ -1,0 +1,12 @@
+{
+  "name": "casa-de-cartas",
+  "private": true,
+  "version": "0.2.0",
+  "scripts": {
+    "test": "node tests/model.test.js",
+    "test:browser": "node tests/browser.test.js"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

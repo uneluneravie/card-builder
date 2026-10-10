@@ -31,7 +31,7 @@ const DATA_RESET_VERSION = '2026-10-01';
 
 function resetLegacyProjectsOnce() {
   if (localStorage.getItem('card-builder-reset-version') === DATA_RESET_VERSION) return;
-  ['card-builder-projects', 'card-builder-deleted-projects', 'card-builder-decks', 'card-builder-notes']
+  ['card-builder-projects', 'card-builder-deleted-projects', 'card-builder-decks', 'card-builder-notes', 'card-builder-definitions']
     .forEach((key) => localStorage.removeItem(key));
   localStorage.setItem('card-builder-reset-version', DATA_RESET_VERSION);
 }
@@ -189,7 +189,7 @@ async function loadGithubJson(path, notFoundFallback) {
 }
 
 function discardLocalProjectChanges() {
-  ['card-builder-projects', 'card-builder-deleted-projects', 'card-builder-decks', 'card-builder-notes']
+  ['card-builder-projects', 'card-builder-deleted-projects', 'card-builder-decks', 'card-builder-notes', 'card-builder-definitions']
     .forEach((key) => localStorage.removeItem(key));
   pendingGithubFiles.clear();
 }
@@ -218,6 +218,8 @@ async function openProject(path) {
   const project = projects.find((item) => item.path === path);
   if (!project) return;
   activeProject = project;
+  const savedDefinitions = readLocalJson('card-builder-definitions', {});
+  if (savedDefinitions[path]) activeProject.definicoes = savedDefinitions[path];
   projectMenu.hidden = true;
   projectSwitcher.setAttribute('aria-expanded', 'false');
   $('.project-switcher-copy strong').textContent = project.nome;
@@ -249,7 +251,9 @@ async function openProject(path) {
         : await loadJson(`projetos/${path}/${project.diario}`);
     const storedDecks = readLocalJson('card-builder-decks', {});
     const savedDecks = Array.isArray(storedDecks) ? {} : storedDecks;
-    activeDecks = savedDecks[path] || decks;
+    activeDecks = (savedDecks[path] || decks).map(CardModel.normalizeDeck);
+    const modelErrors = CardModel.validate(activeProject, activeDecks);
+    if (modelErrors.length) showToast("Verifique os dados", modelErrors.slice(0, 2).join("; "));
     activeDecks.slice(activeDeckFiles.length).forEach((deck, extraIndex) => {
       const usedFiles = new Set(activeDeckFiles);
       const base = slugify(deck.nome || `baralho-${activeDeckFiles.length + extraIndex + 1}`);
@@ -351,6 +355,7 @@ function openDeckDialog(index = null) {
     const deck = activeDecks[index];
     form.elements.name.value = deck.nome;
     form.elements.quantity.value = deck.quantidade;
+    form.elements.deckType.value = deck.tipo || '';
     setSelectValue(form.elements.size, deck.tamanho);
     form.elements.customWidth.value = deck.tamanhoPersonalizado?.largura || '';
     form.elements.customHeight.value = deck.tamanhoPersonalizado?.altura || '';
@@ -432,7 +437,9 @@ function openCardPreview(deck, card, cardIndex) {
       <div class="tcg-description">${escapeHtml(card.descricao || 'Sem descrição.')}</div>
       <footer><span>${escapeHtml(deck.simbolo || '✦')}</span><small>${escapeHtml(deck.nome)}</small></footer>
     </div>`;
+  openStructuredCardEditor(deck, card);
   cardPreviewDialog.showModal();
+  cardPreviewDialog.scrollTop = 0;
 }
 
 function slugify(value) {
@@ -635,7 +642,8 @@ $('#deckForm').addEventListener('submit', async (event) => {
   const frameImage = data.get('frameImage');
   const isCreating = editingDeckIndex === null;
   const deck = {
-    ...(isCreating ? { cartasProntas: 0, descricao: '', simbolo: '✦', cartas: [] } : activeDecks[editingDeckIndex]),
+    ...(isCreating ? { versaoFormato: 2, cartasProntas: 0, descricao: '', simbolo: '✦', cartas: [] } : activeDecks[editingDeckIndex]),
+    tipo: data.get('deckType').trim(),
     nome: data.get('name'), quantidade: Number(data.get('quantity')), tamanho: data.get('size'),
     material: data.get('material'), espessura: data.get('weight'),
     tamanhoPersonalizado: data.get('size') === 'Personalizado'
@@ -644,6 +652,16 @@ $('#deckForm').addEventListener('submit', async (event) => {
     imagemVerso: backImage?.size ? await fileToDataUrl(backImage) : (isCreating ? '' : activeDecks[editingDeckIndex].imagemVerso || ''),
     imagemFrame: frameImage?.size ? await fileToDataUrl(frameImage) : (isCreating ? '' : activeDecks[editingDeckIndex].imagemFrame || '')
   };
+  if (!isCreating && deck.quantidade < (deck.cartas || []).length) {
+    showToast('Quantidade preservada', 'Remover cartas pelo campo quantidade apagaria conteúdo e referências. Mantenha ao menos o número atual de cartas.');
+    return;
+  }
+  if (!deck.id) deck.id = `baralho-${crypto.randomUUID()}`;
+  if (deck.versaoFormato >= 2) deck.cartas = deckCards(deck).map((card, i) => ({...card, id: card.id || `${deck.id}-c${i+1}`}));
+  const prospective = [...activeDecks];
+  if (isCreating) prospective.push(deck); else prospective[editingDeckIndex] = deck;
+  const errors = CardModel.validate(activeProject, prospective);
+  if (errors.length) { showToast('Não foi possível salvar', errors.slice(0, 2).join('; ')); return; }
   if (isCreating) {
     activeDecks.push(deck);
     const usedFiles = new Set(activeDeckFiles);
@@ -666,6 +684,7 @@ $('#deckForm').addEventListener('submit', async (event) => {
   queueGithubFile(deckGithubPath(editingDeckIndex), deck);
   if (isCreating) {
     queueGithubFile(`projetos/${activeProject.path}/projeto.json`, {
+      ...projectPayload(),
       nome: activeProject.nome,
       sigla: activeProject.sigla,
       descricao: activeProject.descricao,
@@ -695,11 +714,15 @@ $('#cardForm').addEventListener('submit', async (event) => {
   const data = new FormData(form);
   const image = data.get('image');
   cards[editingCardIndex] = {
-    ...previousCard,
+    ...withoutStructuredFields(previousCard),
+    ...structuredCardData(),
     titulo: data.get('title').trim(),
     descricao: data.get('description').trim(),
     imagem: image?.size ? await fileToDataUrl(image) : previousCard.imagem || ''
   };
+  const prospective = activeDecks.map((d, i) => i === viewingDeckIndex ? {...deck, cartas: cards} : d);
+  const errors = CardModel.validate(activeProject, prospective);
+  if (errors.length) { $('#cardValidation').textContent = errors.join('\n'); return; }
   deck.cartas = cards;
   deck.cartasProntas = cards.filter((card) => card.titulo && card.descricao).length;
   activeDecks[viewingDeckIndex] = deck;
@@ -856,3 +879,4 @@ githubDialog.addEventListener('cancel', (event) => {
 });
 githubDialog.showModal();
 $('#githubForm').elements.repository.focus();
+

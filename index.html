@@ -82,6 +82,7 @@
 
         <section class="section-block decks-section" id="baralhos">
           <div class="section-heading"><div><h2>Seus baralhos</h2><p>Organize cada conjunto do projeto.</p></div></div>
+          <button type="button" class="secondary-button" id="editDefinitions">Condições e recursos do projeto</button>
           <div class="deck-grid" id="deckGrid"></div>
         </section>
 
@@ -116,6 +117,7 @@
       <p class="dialog-intro" id="deckDialogIntro">Comece pelos dados de produção. Você poderá adicionar e compor as cartas em seguida.</p>
       <div class="form-grid">
         <label class="full">Nome do baralho<input name="name" required placeholder="Ex.: Criaturas da Névoa"></label>
+        <label>Tipo do baralho<input name="deckType" placeholder="Ex.: Situação, Item, Personagem"></label>
         <label>Quantidade de cartas<input name="quantity" type="number" min="1" value="54" required></label>
         <label>Tamanho<select name="size"><option>Padrão (63 × 88 mm)</option><option>Mini Chimera (43 × 65 mm)</option><option>57 × 89 mm (bridge)</option><option>70 × 120 mm (tarô)</option><option>Personalizado</option></select></label>
         <fieldset id="customCardSize" class="custom-card-size full" hidden>
@@ -134,12 +136,13 @@
 
   <dialog id="cardPreviewDialog" class="dialog card-preview-dialog">
     <div class="card-preview-layout">
-      <div id="tcgCardPreview" class="tcg-card"></div>
+      <div class="preview-panel"><div class="face-switch"><button type="button" id="previewFront" class="secondary-button" aria-pressed="true">Frente</button><button type="button" id="previewBack" class="secondary-button" aria-pressed="false">Verso</button></div><div id="tcgCardPreview" class="tcg-card"></div><p id="cardOverflowWarning" role="status"></p></div>
       <form id="cardForm" class="card-edit-form">
         <div><p class="eyebrow">EDITAR CARTA</p><h2>Conteúdo da carta</h2></div>
         <label>Título<input name="title" required placeholder="Título da carta"></label>
         <label>Descrição<textarea name="description" required rows="6" placeholder="Texto ou efeito da carta"></textarea></label>
         <label>Imagem<input name="image" type="file" accept="image/*"><small id="cardImageHint">Escolha uma imagem para substituir a atual.</small></label>
+        <div id="structuredCardEditor"></div><p id="cardValidation" class="validation-error" role="alert"></p>
         <div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button">Salvar edição</button></div>
       </form>
     </div>
@@ -173,6 +176,18 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"><span>✓</span><p><strong>Baralho criado</strong><small>Seu rascunho foi salvo localmente.</small></p></div>
+  <dialog id="definitionsDialog" class="dialog">
+    <form id="definitionsForm">
+      <div class="dialog-head"><h2>Condições e recursos do projeto</h2><button type="button" data-close-dialog aria-label="Fechar">×</button></div>
+      <p>Definições reutilizadas entre baralhos. Condições do mesmo grupo de exclusividade se substituem. A ferramenta descreve as regras; não executa partidas.</p>
+      <div id="definitionsEditor"></div><p id="definitionsValidation" class="validation-error" role="alert"></p>
+      <div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button">Salvar definições</button></div>
+    </form>
+  </dialog>
+  <script src="card-model.js"></script>
   <script src="app.js"></script>
+  <script src="card-editor.js"></script>
+  <script src="structured-ui.js"></script>
 </body>
 </html>
+
