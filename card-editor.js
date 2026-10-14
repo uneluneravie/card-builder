@@ -1,9 +1,9 @@
 /* Editor visual genérico; não contém regras de um jogo específico. */
 const CardEditor = (() => {
   const schemas={...CardModel.fields,
-    carta:{id:'string',tags:['@tags'],secoes:['secao'],verso:'verso',opcoes:['opcao'],condicoes:['condicaoCarta'],regras:['regra']},
+    carta:{id:'string',tags:['@tags'],secoes:['secao'],verso:'verso',resolucoes:['resolucao'],opcoes:['opcao'],condicoes:['condicaoCarta'],regras:['regra']},
     definicoes:{condicoes:['condicao'],recursos:['recurso'],tags:['tag'],zonas:['zona']}};
-  const labels={id:'Identificador',tipo:'Tipo',acao:'Ação',texto:'Texto / instrução',rotulo:'Nome da opção',requisitos:'Requisitos',requisito:'Requisito',custos:'Custos',efeitos:'Efeitos',entao:'Se atendido',senao:'Caso contrário',itens:'Requisitos combinados',alvo:'Alvo',cartaId:'Carta',baralhoId:'Baralho',condicaoId:'Condição',recursoId:'Recurso',zonaId:'Zona',tagId:'Tag',quantidade:'Quantidade / alteração',comparador:'Comparação',selecao:'Seleção',alternativas:'Alternativas de pagamento',condicoes:'Condições',recursos:'Recursos e contadores',zonas:'Zonas',tags:'Tags',secoes:'Seções',verso:'Verso individual',opcoes:'Opções',regras:'Regras e gatilhos',evento:'Evento',descricao:'Descrição',imagem:'URL da imagem',titulo:'Título',nome:'Nome',grupoExclusivo:'Grupo de exclusividade',minimo:'Mínimo',maximo:'Máximo',inicial:'Valor inicial'};
+  const labels={resolucoes:'Resoluções',resolucao:'Resolução vinculada',resolucaoId:'ID da resolução',id:'Identificador',tipo:'Tipo',acao:'Ação',texto:'Texto / instrução',rotulo:'Nome da opção',requisitos:'Requisitos',requisito:'Requisito',custos:'Custos',efeitos:'Efeitos',entao:'Se atendido',senao:'Caso contrário',itens:'Requisitos combinados',alvo:'Alvo',cartaId:'Carta',baralhoId:'Baralho',condicaoId:'Condição',recursoId:'Recurso',zonaId:'Zona',tagId:'Tag',quantidade:'Quantidade / alteração',comparador:'Comparação',selecao:'Seleção',alternativas:'Alternativas de pagamento',condicoes:'Condições',recursos:'Recursos e contadores',zonas:'Zonas',tags:'Tags',secoes:'Seções',verso:'Verso individual',opcoes:'Opções',regras:'Regras e gatilhos',evento:'Evento',descricao:'Descrição',imagem:'URL da imagem',titulo:'Título',nome:'Nome',grupoExclusivo:'Grupo de exclusividade',minimo:'Mínimo',maximo:'Máximo',inicial:'Valor inicial'};
   const esc=escapeHtml;
   let context={};
   function catalog(kind){
@@ -17,7 +17,7 @@ const CardEditor = (() => {
     if(Array.isArray(type))return [];
     if(type==='number')return 0;
     if(['string','text'].includes(type)||type.startsWith('@'))return '';
-    const defaults={requisito:{tipo:'texto',texto:''},efeito:{acao:'texto',texto:''},custo:{tipo:'recurso',recursoId:'',quantidade:1},alvo:{tipo:'carta',cartaId:''},opcao:{id:'',rotulo:'',efeitos:[]},secao:{titulo:'',texto:''},regra:{evento:'manual',efeitos:[]},condicaoCarta:{condicaoId:'',efeitos:[]},condicao:{id:'',nome:''},recurso:{id:'',nome:'',minimo:0,maximo:5,inicial:0},tag:{id:'',nome:''},zona:{id:'',nome:''},verso:{titulo:'',descricao:''}};
+    const defaults={requisito:{tipo:'texto',texto:''},efeito:{acao:'texto',texto:''},custo:{tipo:'recurso',recursoId:'',quantidade:1},alvo:{tipo:'carta',cartaId:''},resolucao:{id:'',titulo:'',efeitos:[]},referenciaResolucao:{resolucaoId:''},opcao:{id:'',rotulo:''},secao:{titulo:'',texto:''},regra:{evento:'manual',efeitos:[]},condicaoCarta:{condicaoId:'',efeitos:[]},condicao:{id:'',nome:''},recurso:{id:'',nome:'',minimo:0,maximo:5,inicial:0},tag:{id:'',nome:''},zona:{id:'',nome:''},verso:{titulo:'',descricao:''}};
     return CardModel.clone(defaults[type]||{});
   }
   function mount(container,data,type,onChange,defs){
@@ -35,7 +35,7 @@ const CardEditor = (() => {
           const remove=el('button');remove.type='button';remove.textContent='Remover';remove.onclick=()=>{if(!confirm(`Remover ${label} ${i+1}?`))return;list.splice(i,1);set(list);refresh();};toolbar.append(remove);row.append(toolbar);box.append(row);
           draw(row,item,spec[0],v=>{list[i]=v;set(list);},`${label} ${i+1}`);
         });
-        const add=el('button','secondary-button');add.type='button';add.textContent=`Adicionar ${label.toLowerCase()}`;add.onclick=()=>{const item=seed(spec[0]);if(item&&typeof item==='object'&&!Array.isArray(item)&&spec[0]==='opcao')item.id=`op-${crypto.randomUUID()}`;list.push(item);set(list);refresh();};box.append(add);return;
+        const add=el('button','secondary-button');add.type='button';add.textContent=`Adicionar ${label.toLowerCase()}`;add.onclick=()=>{const item=seed(spec[0]);if(item&&typeof item==='object'&&!Array.isArray(item)&&['opcao','resolucao'].includes(spec[0]))item.id=`${spec[0]}-${crypto.randomUUID()}`;list.push(item);set(list);refresh();};box.append(add);return;
       }
       if(typeof spec==='string'&&schemas[spec]){
         const box=el('fieldset','rule-object'),legend=el('legend');legend.textContent=label;box.append(legend);box.dataset.schema=spec;parent.append(box);
@@ -67,7 +67,8 @@ const CardEditor = (() => {
     if(!r)return '';
     const name=(kind,id)=>catalog(kind).find(d=>d.id===id)?.nome||id||'';
     const target=r.alvo?.cartaId||name('baralhos',r.alvo?.baralhoId)||(r.alvo?.tipo==='grupo'?'grupo':'alvo escolhido');
-    if(r.tipo==='todos'||r.tipo==='qualquer'||r.tipo==='nao')return `${r.tipo}: ${(r.itens||[]).map(describe).join('; ')}`;
+    if(r.tipo==='nao')return `NÃO (${describe(r.itens?.[0])})`;
+    if(r.tipo==='todos'||r.tipo==='qualquer')return (r.itens||[]).map(x=>`(${describe(x)})`).join(r.tipo==='todos'?' E ':' OU ');
     if(r.tipo==='condicao')return `${target}: ${name('condicoes',r.condicaoId)}`;
     if(r.tipo==='zona')return `${target} em ${name('zonas',r.zonaId)}`;
     if(r.tipo==='contagem')return `${name('tags',r.tagId)} em ${name('zonas',r.zonaId)} ${r.comparador} ${r.quantidade}`;
@@ -88,8 +89,15 @@ const CardEditor = (() => {
     const c=face==='verso'?card.verso||{}:card;
     let html=`<p>${esc(c.descricao||'Sem descrição.')}</p>`;
     for(const s of c.secoes||[])html+=`<h3>${esc(s.titulo)}</h3><p>${esc(s.texto)}</p>`;
+    for(const r of c.resolucoes||[])html+=`<section class="resolution"><h3>${esc(r.titulo||r.id)} <small class="resolution-code">${esc(r.id)}</small></h3>${r.texto?`<p>${esc(r.texto)}</p>`:''}${r.custos?.length?`<p><b>Pagamento:</b> ${esc(r.custos.map(describe).join('; '))}</p>`:''}<p><b>Resolver:</b> ${esc((r.efeitos||[]).map(describe).join('; '))}</p></section>`;
     if(face!=='verso'){
-      for(const o of card.opcoes||[])html+=`<section><h3>${esc(o.rotulo)}</h3>${o.texto?`<p>${esc(o.texto)}</p>`:''}${o.requisitos?`<p><b>Requer:</b> ${esc(describe(o.requisitos))}</p>`:''}${o.custos?.length?`<p><b>Custo:</b> ${esc(o.custos.map(describe).join('; '))}</p>`:''}${o.efeitos?.length?`<p><b>Efeitos:</b> ${esc(o.efeitos.map(describe).join('; '))}</p>`:''}</section>`;
+      if(card.opcoes?.some(o=>o.resolucao))html+='<p class="resolution-reference">Escolham uma opção antes de virar a carta.</p>';
+      for(const o of card.opcoes||[]){
+        const requirement=CardModel.publicRequirements(card,o,activeDecks);
+        html+=`<section><h3>${esc(o.rotulo)}${o.resolucao?` <small class="resolution-code">${esc(o.resolucao.resolucaoId)}${o.resolucao.cartaId?` · ${esc(o.resolucao.cartaId)}`:''}</small>`:''}</h3>${o.texto?`<p>${esc(o.texto)}</p>`:''}${requirement?`<p><b>Requer:</b> ${esc(describe(requirement))}</p>`:''}`;
+        if(!o.resolucao)html+=`${o.custos?.length?`<p><b>Custo:</b> ${esc(o.custos.map(describe).join('; '))}</p>`:''}${o.efeitos?.length?`<p><b>Efeitos:</b> ${esc(o.efeitos.map(describe).join('; '))}</p>`:''}`;
+        html+='</section>';
+      }
       for(const r of card.condicoes||[])html+=`<h3>${esc(catalog('condicoes').find(x=>x.id===r.condicaoId)?.nome||r.condicaoId)}</h3><p>${esc((r.efeitos||[]).map(describe).join('; '))}</p>`;
       for(const r of card.regras||[])html+=`<h3>${esc(r.evento==='manual'?'Uso manual':'Ao '+r.evento)}</h3><p>${esc(r.texto||'')}</p>${r.requisitos?`<p>Requer: ${esc(describe(r.requisitos))}</p>`:''}<p>${esc((r.efeitos||[]).map(describe).join('; '))}</p>`;
     }

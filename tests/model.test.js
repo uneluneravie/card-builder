@@ -24,7 +24,24 @@ if(process.argv[2]){
  assert.equal(decks.reduce((n,d)=>n+d.cartas.length,0),28);
  assert.equal(decks[1].cartas.reduce((n,c)=>n+c.opcoes.length,0),42);
  assert.equal(decks[2].cartas.filter(c=>c.verso).length,3);
- assert.equal(decks[1].cartas[8].opcoes[0].custos[0].tipo,'condicionado');
+ assert.equal(M.findResolution(decks[1].cartas[8],decks[1].cartas[8].opcoes[0],decks).custos[0].tipo,'condicionado');
  assert.equal(decks[3].cartas[4].regras[0].evento,'reaplicar');
 }
+const local=M.clone(deck);local.cartas[0].verso={resolucoes:[{id:'R1',custos:local.cartas[0].opcoes[0].custos,efeitos:local.cartas[0].opcoes[0].efeitos}]};
+local.cartas[0].opcoes[0]={id:'A',rotulo:'Ajudar',resolucao:{resolucaoId:'R1'}};
+assert.deepEqual(M.validate(project,[local]),[]);
+assert.equal(M.publicRequirements(local.cartas[0],local.cartas[0].opcoes[0],[local]).recursoId,'energia');
+const missing=M.clone(local);missing.cartas[0].opcoes[0].resolucao.resolucaoId='ausente';assert(M.validate(project,[missing]).some(e=>e.includes('resolução inexistente')));
+const badHidden=M.clone(local);badHidden.cartas[0].verso.resolucoes[0].efeitos[0].alvo.cartaId='ausente';assert(M.validate(project,[badHidden]).some(e=>e.includes('inexistente')));
+const ambiguous=M.clone(local);ambiguous.cartas[0].opcoes[0].efeitos=[{acao:'texto',texto:'duplicado'}];assert(M.validate(project,[ambiguous]).some(e=>e.includes('não ambos')));
+const separate=M.clone(local), resolutionCard={id:'R-CARD',titulo:'Resolução',resolucoes:separate.cartas[0].verso.resolucoes};delete separate.cartas[0].verso;
+separate.cartas[0].opcoes[0].resolucao.cartaId='R-CARD';separate.cartas.push(resolutionCard);separate.quantidade=2;
+assert.deepEqual(M.validate(project,[separate]),[]);assert.equal(M.findResolution(separate.cartas[0],separate.cartas[0].opcoes[0],[separate]).id,'R1');
 console.log('Modelo validado: compatibilidade, referências, limites, custos, ramificações e migração.');
+// Preview público não pode incluir a resolução; o verso deve renderizá-la.
+const vm=require('node:vm');const code=require('node:fs').readFileSync(require('node:path').join(__dirname,'../card-editor.js'),'utf8');
+const sandbox={CardModel:M,activeDecks:[local],activeProject:project,escapeHtml:v=>String(v??'').replaceAll('<','&lt;')};
+vm.createContext(sandbox);vm.runInContext(code+';globalThis.Editor=CardEditor;',sandbox);
+const front=sandbox.Editor.content(local.cartas[0],'frente'),back=sandbox.Editor.content(local.cartas[0],'verso');
+assert(front.includes('Requer:'));assert(!front.includes('Resolver:'));assert(!front.includes('Pagamento:'));assert(back.includes('Resolver:'));assert(back.includes('Pagamento:'));
+console.log('Separação frente/verso e pré-requisitos públicos validados.');

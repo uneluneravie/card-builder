@@ -6,7 +6,9 @@
     requisito: {tipo:['texto','todos','qualquer','nao','condicao','recurso','zona','contagem'],texto:'text',alvo:'alvo',condicaoId:'@condicoes',recursoId:'@recursos',zonaId:'@zonas',tagId:'@tags',comparador:['>=','<=','=='],quantidade:'number',itens:['requisito']},
     custo: {tipo:['recurso','carta','alternativa','condicionado'],requisito:'requisito',entao:['custo'],senao:['custo'],recursoId:'@recursos',cartaId:'@cartas',quantidade:'number',alternativas:['custo']},
     efeito: {acao:['texto','mover','aplicar','remover','alterar','revelar','ramificar','encerrar'],texto:'text',alvo:'alvo',zonaId:'@zonas',condicaoId:'@condicoes',recursoId:'@recursos',quantidade:'number',requisito:'requisito',entao:['efeito'],senao:['efeito']},
-    opcao: {id:'string',rotulo:'string',texto:'text',requisitos:'requisito',custos:['custo'],efeitos:['efeito']},
+    referenciaResolucao: {cartaId:'@cartas',resolucaoId:'string'},
+    resolucao: {id:'string',titulo:'string',texto:'text',custos:['custo'],efeitos:['efeito']},
+    opcao: {id:'string',rotulo:'string',texto:'text',requisitos:'requisito',resolucao:'referenciaResolucao',custos:['custo'],efeitos:['efeito']},
     secao: {titulo:'string',texto:'text'},
     regra: {evento:['receber','reaplicar','revelar','manual'],texto:'text',requisitos:'requisito',efeitos:['efeito']},
     condicaoCarta: {condicaoId:'@condicoes',efeitos:['efeito']},
@@ -14,7 +16,7 @@
     recurso: {id:'string',nome:'string',minimo:'number',maximo:'number',inicial:'number'},
     tag: {id:'string',nome:'string'},
     zona: {id:'string',nome:'string'},
-    verso: {titulo:'string',descricao:'text',imagem:'string',secoes:['secao']}
+    verso: {titulo:'string',descricao:'text',imagem:'string',secoes:['secao'],resolucoes:['resolucao']}
   };
   function validate(project, decks) {
     const errors = [], defs=project.definicoes || {}, sets={cartas:new Set(),baralhos:new Set()};
@@ -41,7 +43,7 @@
     function walk(v,path) {
       if(!v || typeof v!=='object')return;
       if(Array.isArray(v)){v.forEach((x,i)=>walk(x,`${path}[${i}]`));return;}
-      const structural=new Set(['cartas','opcoes','condicoes','regras','custos','efeitos','requisitos','requisito','entao','senao','alternativas','itens','alvo','tags',...Object.keys(refs)]);
+      const structural=new Set(['cartas','verso','resolucoes','resolucao','opcoes','condicoes','regras','custos','efeitos','requisitos','requisito','entao','senao','alternativas','itens','alvo','tags',...Object.keys(refs)]);
       for(const [k,val] of Object.entries(v)) {
         if(!structural.has(k))continue;
         if(refs[k] && val && !sets[refs[k]].has(val))err(path,`${k} inexistente: ${val}`);
@@ -77,6 +79,15 @@
       if(r.tipo==='texto'&&!r.texto)err(path,'requisito textual vazio');
     }
     decks.forEach(d=>walk(d,d.nome));
+    const cards=decks.flatMap(d=>d.cartas||[]);
+    for(const card of cards){
+      const resolutions=[...(card.resolucoes||[]),...(card.verso?.resolucoes||[])], ids=new Set();
+      for(const r of resolutions){if(!r.id||ids.has(r.id))err(card.id,'resolução sem ID ou ID duplicado');ids.add(r.id);}
+      for(const o of card.opcoes||[])if(o.resolucao){
+        if(o.custos?.length||o.efeitos?.length)err(o.id,'use resolução vinculada ou custos/efeitos diretos, não ambos');
+        if(!o.resolucao.resolucaoId || !findResolution(card,o,decks))err(o.id,'resolução inexistente');
+      }
+    }
     return [...new Set(errors)];
   }
   function normalizeDeck(deck) {
@@ -84,7 +95,34 @@
     d.cartas=(d.cartas||[]).map(c=>({...c,descricao:c.descricao??c.texto??'',imagem:c.imagem||''}));
     return d;
   }
-  const api={fields,validate,normalizeDeck,clone};
+  function findResolution(card,option,decks=[]) {
+    const ref=option.resolucao;if(!ref)return null;
+    const owner=ref.cartaId&&ref.cartaId!==card.id?decks.flatMap(d=>d.cartas||[]).find(c=>c.id===ref.cartaId):card;
+    return [...(owner?.resolucoes||[]),...(owner?.verso?.resolucoes||[])].find(r=>r.id===ref.resolucaoId)||null;
+  }
+  // Disponibilidade é pública; o pagamento e os resultados continuam na resolução.
+  function combine(type,items){
+    const unique=[...new Map(items.filter(Boolean).flatMap(r=>r.tipo===type?r.itens:[r]).map(r=>[JSON.stringify(r),r])).values()];
+    return unique.length>1?{tipo:type,itens:unique}:unique[0]||null;
+  }
+  function costRequirement(cost){
+    if(cost.tipo==='recurso')return {tipo:'recurso',recursoId:cost.recursoId,comparador:'>=',quantidade:cost.quantidade};
+    if(cost.tipo==='carta')return {tipo:'zona',alvo:{tipo:'carta',cartaId:cost.cartaId},zonaId:'mesa'};
+    if(cost.tipo==='alternativa')return combine('qualquer',(cost.alternativas||[]).map(costRequirement));
+    if(cost.tipo==='condicionado'){
+      const yes=combine('todos',(cost.entao||[]).map(costRequirement)),no=combine('todos',(cost.senao||[]).map(costRequirement));
+      if(!yes&&!no)return null;
+      if(!yes)return combine('qualquer',[cost.requisito,no]);
+      if(!no)return combine('qualquer',[{tipo:'nao',itens:[cost.requisito]},yes]);
+      return combine('qualquer',[combine('todos',[cost.requisito,yes]),combine('todos',[{tipo:'nao',itens:[cost.requisito]},no])]);
+    }
+    return null;
+  }
+  function publicRequirements(card,option,decks=[]){
+    const resolution=findResolution(card,option,decks);
+    return combine('todos',[option.requisitos,...(resolution?.custos||option.custos||[]).map(costRequirement)]);
+  }
+  const api={fields,validate,normalizeDeck,clone,findResolution,costRequirement,publicRequirements};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   else root.CardModel=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -2,7 +2,7 @@ let getStructuredCard = () => ({});
 let previewCardDraft = null;
 let previewDeckDraft = null;
 let previewFace = 'frente';
-function withoutStructuredFields(card) { const result={...card}; for(const key of ['id','tags','secoes','verso','opcoes','condicoes','regras'])delete result[key]; return result; }
+function withoutStructuredFields(card) { const result={...card}; for(const key of ['id','tags','secoes','verso','resolucoes','opcoes','condicoes','regras'])delete result[key]; return result; }
 function structuredCardData() { return getStructuredCard(); }
 function projectPayload() {
   const {path,local,...rest}=activeProject;
@@ -10,7 +10,7 @@ function projectPayload() {
 }
 function openStructuredCardEditor(deck,card) {
   const structured={};
-  for(const key of ['id','tags','secoes','verso','opcoes','condicoes','regras'])if(card[key]!==undefined)structured[key]=CardModel.clone(card[key]);
+  for(const key of ['id','tags','secoes','verso','resolucoes','opcoes','condicoes','regras'])if(card[key]!==undefined)structured[key]=CardModel.clone(card[key]);
   // Cartas antigas recebem ID estável apenas quando forem salvas.
   structured.id ||= `carta-${crypto.randomUUID()}`;
   previewCardDraft={...card,...structured};previewDeckDraft=deck;previewFace='frente';

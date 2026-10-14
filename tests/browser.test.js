@@ -28,7 +28,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.waitForSelector('.deck-card');assert.equal(await page.locator('.deck-card').count(),4);
  assert.equal(await page.locator('#cardCount').textContent(),'28');
  // Un candidato: somente o verso contém o segredo.
- await page.locator('.deck-card').filter({hasText:'Candidatos'}).click();
+ await page.locator('.deck-card').filter({hasText:files.get(p+'baralhos/ambrosio-candidatos.json').nome}).click();
  await page.locator('#openDeckPage').click();
  await page.locator('[data-card-index="1"]').click();
  assert(!(await page.locator('#tcgCardPreview').textContent()).includes('É o príncipe verdadeiro'));
@@ -60,12 +60,16 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  assert.equal(files.get(p+'projeto.json').baralhos.length,5);assert.equal(files.get(p+'projeto.json').definicoes.condicoes.length,3);
  // Preview em três tamanhos, sem overflow horizontal da página/dialog.
  await page.locator('.deck-card').filter({hasText:'Situações'}).click();await page.locator('#openDeckPage').click();await page.locator('[data-card-index="8"]').click();
- // Editar um efeito estruturado, sem tocar em JSON.
- const option=page.locator('[data-items=opcao] > details').first();await option.locator(':scope > summary').click();
- const effect=option.locator('[data-items=efeito] > details').first();await effect.locator(':scope > summary').click();
+ // Frente pública: pré-requisitos, sem pagamento ou resultados.
+ const front=await page.locator('#tcgCardPreview').textContent();assert(front.includes('Requer:'));assert(front.includes('Provisões'));assert(!front.includes('Resolver:'));assert(!front.includes('Pagamento:'));assert(!front.includes('Alarme:'));
+ await page.locator('#previewBack').click();assert((await page.locator('#tcgCardPreview').textContent()).includes('Resolver:'));assert((await page.locator('#tcgCardPreview').textContent()).includes('Alarme:'));
+ await page.locator('#previewFront').click();
+ // Editar a resolução no verso, sem tocar em JSON.
+ const resolution=page.locator('[data-schema=verso] [data-items=resolucao] > details').first();await resolution.locator(':scope > summary').click();
+ const effect=resolution.locator('[data-items=efeito] > details').first();await effect.locator(':scope > summary').click();
  await effect.locator('label').filter({hasText:/^Quantidade \/ alteração$/}).locator('input').fill('-2');
  await page.locator('#cardForm button.primary-button').click();await page.waitForTimeout(200);
- assert.equal(files.get(p+'baralhos/ambrosio-situacoes.json').cartas[8].opcoes[0].efeitos[0].quantidade,-2);
+ assert.equal(files.get(p+'baralhos/ambrosio-situacoes.json').cartas[8].verso.resolucoes[0].efeitos[0].quantidade,-2);
  await page.locator('[data-card-index="8"]').click();
  for(const width of [1280,768,360]){
   await page.setViewportSize({width,height:900});await page.waitForTimeout(80);
@@ -75,11 +79,12 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   if(textOverflow)assert((await page.locator('#cardOverflowWarning').textContent()).includes('excede'));
   await page.locator('#cardPreviewDialog').evaluate(d=>d.scrollTop=0);
   await page.screenshot({path:`/tmp/card-builder-${width}.png`});
+  await page.locator('#previewBack').click();await page.screenshot({path:`/tmp/card-builder-verso-${width}.png`});await page.locator('#previewFront').click();
  }
  // Remover uma seção realmente a remove do JSON salvo.
  await page.locator('#cardForm [data-close-dialog]').click();await page.locator('#backToProject').click();
- await page.locator('.deck-card').filter({hasText:'Ambrósio — Quest'}).click();await page.locator('#openDeckPage').click();await page.locator('[data-card-index="0"]').click();
- page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Remover Seções',exact:true}).click();
+ await page.locator('.deck-card').filter({hasText:files.get(p+'baralhos/ambrosio-quest.json').nome}).click();await page.locator('#openDeckPage').click();await page.locator('[data-card-index="0"]').click();
+ page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Remover Seções',exact:true}).first().click();
  await page.locator('#cardForm button.primary-button').click();await page.waitForTimeout(200);assert(!Object.hasOwn(files.get(p+'baralhos/ambrosio-quest.json').cartas[0],'secoes'));
  assert.deepEqual(errors,[]);
  // Baralho legado com metadados desconhecidos continua editável.

@@ -50,3 +50,5 @@ Além de título, descrição e imagem, é possível editar seções, versos ind
 O modelo mantém compatibilidade com os baralhos simples existentes. A aplicação é uma ferramenta de autoria, sem execução automática de partidas. Veja [o contrato v2](docs/modelo-v2.md) para campos, semântica e validação.
 
 Execute os testes do modelo com `node tests/model.test.js`. Para conferir a migração, passe o caminho da pasta do projeto Ambrósio como argumento.
+
+Opções também podem apontar para resoluções no verso: o preview da frente mostra apenas a escolha e os pré-requisitos (inclusive disponibilidade para custos). Custos e efeitos aparecem na resolução. Referências a outra carta permitem separar o baralho futuramente. Veja o contrato v2 para o formato.

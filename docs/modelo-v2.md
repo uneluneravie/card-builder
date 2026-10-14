@@ -97,3 +97,39 @@ node tests/model.test.js /caminho/do/save-the-prince-bgrpg/projetos/local-179089
 O script `tools/migrate-ambrosio.py` é uma migração específica, explícita e revisável da quest, separada do modelo genérico. Não deve ser usado como importador universal.
 
 Para os testes de navegador, execute `npm ci`, `npx playwright install chromium` e `node tests/browser.test.js /caminho/do/save-the-prince-bgrpg`. O teste inicia um servidor local e simula a API GitHub: não usa credenciais nem escreve nos repositórios. `CHROMIUM_EXECUTABLE_PATH` permite usar um Chromium já instalado.
+
+
+## Opções públicas e resoluções vinculadas (v2, campos opcionais)
+
+Uma opção pode manter `requisitos` e apontar para `resolucao: {resolucaoId}`. A resolução local fica em `carta.verso.resolucoes`, com `id`, `titulo`, `texto` opcional, `custos` e `efeitos`. Não duplicar custos/efeitos na opção vinculada. O verso renderiza as resoluções; a frente exibe somente a opção, seu texto público, requisitos e código de leitura.
+
+A disponibilidade para pagar um custo também é um pré-requisito público. O renderer a calcula a partir dos custos da resolução: recurso suficiente, carta disponível, alternativas e custos condicionados. Assim, alterar um custo no editor atualiza a informação pública sem duplicar os dados. A disponibilidade é verificada antes da escolha; o custo é pago após revelá-la, antes dos efeitos. Não há execução automática. Os testes de um custo condicionado usam o estado no momento da escolha.
+
+Para usar um baralho separado posteriormente, declarar `resolucao: {cartaId, resolucaoId}` na opção. A carta de destino pode manter `resolucoes` na frente ou no verso. O vínculo usa IDs estáveis; mudar de localização não exige reescrever os efeitos. A ferramenta valida referências locais/externas e IDs duplicados, mas não sorteia variantes nem transforma isso automaticamente em rejogabilidade.
+
+Cartas antigas com custos/efeitos diretamente nas opções mantêm a apresentação anterior. A ocultação é ativada pelo vínculo explícito, sem alterar silenciosamente outros jogos. O editor é um ambiente de autoria: os dados completos continuam disponíveis para editar, mesmo quando o preview da frente não os mostra. Essa separação não é um mecanismo de controle de acesso.
+
+Exemplo:
+
+```json
+{
+  "id": "S02",
+  "titulo": "O sinete sob a água",
+  "descricao": "Uma correnteza leva o sinete.",
+  "opcoes": [{
+    "id": "S02-1",
+    "rotulo": "Mergulhar juntos",
+    "resolucao": {"resolucaoId": "S02-1-R"}
+  }],
+  "verso": {
+    "resolucoes": [{
+      "id": "S02-1-R",
+      "titulo": "Mergulhar juntos",
+      "custos": [{"tipo": "recurso", "recursoId": "provisoes", "quantidade": 1}],
+      "efeitos": [{"acao": "texto", "texto": "Recuperem o sinete."}]
+    }]
+  }
+}
+```
+
+A frente deste exemplo mostra `Provisões >= 1`, sem mostrar o efeito. O código identifica a resolução a ler depois da decisão.
