@@ -2,14 +2,14 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES+'/playwright':'playwright');
 (async()=>{
- const server=require('node:http').createServer((req,res)=>{const file=path.resolve(__dirname,'..',req.url.replace(/^\/card-builder\/?/,'')||'index.html');if(!file.startsWith(path.resolve(__dirname,'..')+path.sep)){res.writeHead(403);res.end();return;}try{const data=fs.readFileSync(file);res.setHeader('Content-Type',file.endsWith('.js')?'application/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(data);}catch{res.writeHead(404);res.end();}});
+ const server=require('node:http').createServer((req,res)=>{const file=path.resolve(__dirname,'..',new URL(req.url,'http://localhost').pathname.replace(/^\/card-builder\/?/,'')||'index.html');if(!file.startsWith(path.resolve(__dirname,'..')+path.sep)){res.writeHead(403);res.end();return;}try{const data=fs.readFileSync(file);res.setHeader('Content-Type',file.endsWith('.js')?'application/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(data);}catch{res.writeHead(404);res.end();}});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const origin=`http://127.0.0.1:${server.address().port}`;
  const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE_PATH||undefined,args:['--no-sandbox']});
  const page=await browser.newPage({viewport:{width:1280,height:900}});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  const root=path.resolve(process.argv[2]||'../save-the-prince-bgrpg');
- const files=new Map([['projetos/index.json',{projetos:['local-1790897190889']}],['projetos/local-1790897190889/diario/paginas.json',[]]]);
+ const files=new Map([['projetos/index.json',{projetos:['local-1790897190889']}],['projetos/local-1790897190889/diario/paginas.json',JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/diary-pages.json')))]]);
  const p='projetos/local-1790897190889/';const project=JSON.parse(fs.readFileSync(path.join(root,p,'projeto.json')));files.set(p+'projeto.json',project);
  for(const f of project.baralhos)files.set(p+'baralhos/'+f,JSON.parse(fs.readFileSync(path.join(root,p,'baralhos',f))));
  await page.route('https://api.github.com/**',async route=>{
@@ -20,6 +20,9 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   if(!files.has(key))return route.fulfill({status:404,json:{message:'Not found'}});
   return route.fulfill({json:{sha:'mock',content:Buffer.from(JSON.stringify(files.get(key))).toString('base64')}});
  });
+ // Recursos sem versão representam entradas antigas que podem existir no cache.
+ const staleAssets=[];
+ await page.route(/\/(app|diary-preview|card-model|card-editor|structured-ui)\.js$/, route=>{staleAssets.push(route.request().url());return route.fulfill({contentType:'application/javascript',body:'throw new Error("JavaScript antigo carregado")'});});
  await page.goto(origin+'/card-builder/');
  await page.locator('#githubForm [name=repository]').fill('uneluneravie/save-the-prince-bgrpg');
  await page.locator('#githubForm [name=token]').fill('test-only');
@@ -27,13 +30,25 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.locator('[data-project-path]').click();
  await page.waitForSelector('.deck-card');assert.equal(await page.locator('.deck-card').count(),4);
  assert.equal(await page.locator('#cardCount').textContent(),'28');
+ // Páginas reais do projeto: ambas devem abrir no preview, inclusive o mapa completo.
+ for (const index of [0,1]) {
+  await page.locator(`[data-diary-index="${index}"]`).click();
+  assert(await page.locator('#noteEditor').isHidden());
+  assert.notEqual(await page.locator('#noteDialogTitle').textContent(),'Editar página');
+  assert(await page.locator('#notePreview h1, #notePreview h2').count()>0);
+  if(index===1) {
+   await page.waitForSelector('#notePreview .diary-diagram svg',{timeout:30000});
+   assert.equal(await page.locator('#notePreview .diary-diagram .error-state').count(),0);
+  }
+  await page.locator('#closeNote').click();
+ }
  // Diário: criar, abrir em leitura, editar explicitamente e manter Markdown salvo.
  const markdown = '# Planejamento\n\n**Destaque** e [link](https://example.com)\n\n- Primeiro\n- Segundo\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n```mermaid\nflowchart LR\n A[Ideia] --> B[Teste]\n```\n\n<script>window.diaryXss=true</script><img src=x onerror="window.diaryXss=true">';
  await page.locator('#newNoteButton').click();
  await page.locator('#noteForm [name=title]').fill('Plano em Markdown');
  await page.locator('#noteForm [name=content]').fill(markdown);
  await page.locator('#saveNote').click();
- await page.locator('[data-diary-index="0"]').click();
+ await page.locator('[data-diary-index="2"]').click();
  assert(await page.locator('#noteEditor').isHidden());
  assert(await page.locator('#noteForm [name=content]').isDisabled());
  assert.equal(await page.locator('#notePreview h1').textContent(),'Planejamento');
@@ -58,14 +73,14 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.locator('#noteForm [name=content]').fill(markdown+'\n\nAtualizado.');
  await page.locator('#saveNote').click();
  await page.waitForFunction(()=>!document.querySelector('#noteDialog').open);
- await new Promise((resolve,reject)=>{const deadline=Date.now()+5000;const check=()=>files.get(p+'diario/paginas.json')?.[0]?.conteudo===markdown+'\n\nAtualizado.'?resolve():Date.now()>deadline?reject(new Error('Diário não sincronizado')):setTimeout(check,20);check();});
- assert.equal(files.get(p+'diario/paginas.json')[0].conteudo,markdown+'\n\nAtualizado.');
- await page.locator('[data-diary-index="0"]').click();
+ await new Promise((resolve,reject)=>{const deadline=Date.now()+5000;const check=()=>files.get(p+'diario/paginas.json')?.[2]?.conteudo===markdown+'\n\nAtualizado.'?resolve():Date.now()>deadline?reject(new Error('Diário não sincronizado')):setTimeout(check,20);check();});
+ assert.equal(files.get(p+'diario/paginas.json')[2].conteudo,markdown+'\n\nAtualizado.');
+ await page.locator('[data-diary-index="2"]').click();
  assert(await page.locator('#noteEditor').isHidden());
  await page.locator('#editNote').click();
  await page.locator('#noteForm [name=content]').fill('Alteração cancelada');
  await page.locator('#closeNote').click();
- await page.locator('[data-diary-index="0"]').click();
+ await page.locator('[data-diary-index="2"]').click();
  assert((await page.locator('#notePreview').textContent()).includes('Atualizado.'));
  await page.locator('#closeNote').click();
  // Un candidato: somente o verso contém o segredo.
@@ -150,5 +165,6 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.locator('#cardForm [name=title]').fill('Antiga revisada');await page.locator('#cardForm button.primary-button').click();await page.waitForTimeout(200);
  assert.deepEqual(files.get(p+'baralhos/legado.json').cartas[0].extra,{cartaId:'referência de outro formato',valor:7});assert.equal(files.get(p+'baralhos/legado.json').cartas[0].titulo,'Antiga revisada');
  assert.deepEqual(errors,[]);
+ assert.deepEqual(staleAssets,[],'O HTML deve solicitar arquivos versionados para evitar JavaScript antigo em cache');
  await browser.close();server.close();console.log('Integração passou: 28 cartas, versos, edição/sync, referências, definições, novo baralho, recarga e 360/768/1280 px.');
 })().catch(e=>{console.error(e);process.exit(1);});
