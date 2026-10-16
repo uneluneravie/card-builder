@@ -136,7 +136,7 @@
 
   <dialog id="cardPreviewDialog" class="dialog card-preview-dialog">
     <div class="card-preview-layout">
-      <div class="preview-panel"><div class="face-switch"><button type="button" id="previewFront" class="secondary-button" aria-pressed="true">Frente</button><button type="button" id="previewBack" class="secondary-button" aria-pressed="false">Verso</button></div><div id="tcgCardPreview" class="tcg-card"></div><p id="cardOverflowWarning" role="status"></p></div>
+      <div class="preview-panel"><div class="face-switch"><button type="button" id="previewFront" class="secondary-button" aria-pressed="true">Frente</button><button type="button" id="previewBack" class="secondary-button" aria-pressed="false">Verso</button><label class="preview-size-toggle" title="Tamanho real com zoom de 100%: 1 mm = 96 / 25,4 px"><input type="checkbox" id="previewActualSize" role="switch"><span>Tamanho real</span></label></div><div class="preview-viewport"><div id="tcgCardPreview" class="tcg-card"></div></div><p id="cardOverflowWarning" role="status"></p></div>
       <form id="cardForm" class="card-edit-form">
         <div><p class="eyebrow">EDITAR CARTA</p><h2>Conteúdo da carta</h2></div>
         <label>Título<input name="title" required placeholder="Título da carta"></label>

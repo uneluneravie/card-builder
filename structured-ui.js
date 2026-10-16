@@ -26,12 +26,18 @@ function renderStructuredPreview() {
   const image=face.imagem||(previewFace==='verso'?previewDeckDraft.imagemVerso:'');
   const {width,height}=cardDimensions(previewDeckDraft);
   const preview=$('#tcgCardPreview');preview.style.aspectRatio=`${width}/${height}`;
+  // CSS pixels at 100% zoom: one inch is 96 px and 25.4 mm.
+  const actualSize=$('#previewActualSize').checked;
+  preview.classList.toggle('actual-size',actualSize);
+  preview.style.width=actualSize?`${width*96/25.4}px`:'';
+  preview.style.height=actualSize?`${height*96/25.4}px`:'';
   preview.innerHTML=`<div class="tcg-frame structured-frame"><header>${escapeHtml(face.titulo||card.titulo)}${previewFace==='verso'?' — Verso':''}</header>${image?`<div class="tcg-art" style="background-image:url('${escapeHtml(image)}')"></div>`:''}<div class="tcg-description">${CardEditor.content(card,previewFace)}</div><footer><span>${escapeHtml(card.id||'')}</span><small>${escapeHtml(previewDeckDraft.nome)}</small></footer></div>`;
   if(previewDeckDraft.imagemFrame)preview.firstElementChild.style.backgroundImage=`url("${previewDeckDraft.imagemFrame.replaceAll('"','%22')}")`;
   $('#previewFront').setAttribute('aria-pressed',String(previewFace==='frente'));
   $('#previewBack').setAttribute('aria-pressed',String(previewFace==='verso'));
   requestAnimationFrame(updatePreviewOverflow);
 }
+$('#previewActualSize').onchange=renderStructuredPreview;
 $('#previewFront').onclick=()=>{previewFace='frente';renderStructuredPreview();};
 $('#previewBack').onclick=()=>{previewFace='verso';renderStructuredPreview();};
 $('#cardForm').elements.title.addEventListener('input',renderStructuredPreview);

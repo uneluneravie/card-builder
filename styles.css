@@ -24,3 +24,10 @@
 @media(max-width:760px){.card-preview-layout{grid-template-columns:1fr;max-height:none;overflow:visible;padding:16px}.preview-panel{position:static}.rule-object,.rule-array{padding:8px}.rule-item{padding:4px}.card-preview-dialog{max-height:calc(100dvh - 24px)}.tcg-card{max-width:360px}.rule-toolbar strong{flex-basis:100%}}
 .rule-item>summary{min-height:44px;display:list-item;padding:12px 6px;cursor:pointer;font-weight:700;overflow-wrap:anywhere}.rule-item[open]{background:#f4efe8}.rule-item .rule-toolbar{margin-bottom:8px}button[hidden]{display:none!important}
 .resolution-code{font-size:10px;font-weight:400;white-space:nowrap}.resolution-reference{font-style:italic}
+
+/* O tamanho físico permanece fixo; cartas grandes rolam dentro do preview. */
+.face-switch{align-items:center;flex-wrap:wrap}.face-switch button{min-height:44px}
+.preview-size-toggle{margin-left:auto;display:flex;align-items:center;gap:6px;min-height:44px;cursor:pointer;font-size:12px;color:var(--ink)}
+.preview-size-toggle input{width:32px;height:20px;margin:0;accent-color:var(--purple);cursor:pointer}
+.preview-viewport{max-width:100%;overflow:auto;padding-bottom:12px}
+.tcg-card.actual-size{max-width:none;flex-shrink:0;margin-inline:auto}

@@ -75,8 +75,21 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   await page.setViewportSize({width,height:900});await page.waitForTimeout(80);
   const overflow=await page.evaluate(()=>{const d=document.querySelector('#cardPreviewDialog');return {page:document.documentElement.scrollWidth>innerWidth+2,dialog:d.scrollWidth>d.clientWidth+2};});
   assert(!overflow.page && !overflow.dialog,JSON.stringify({width,...overflow}));
+  // O tamanho real independe da viewport e permanece ao alternar a face.
+  await page.locator('#previewActualSize').check();
+  for(const face of ['#previewFront','#previewBack']){
+   await page.locator(face).click();
+   const size=await page.locator('#tcgCardPreview').boundingBox();
+   assert(Math.abs(size.width-70*96/25.4)<1,JSON.stringify({width,size}));
+   assert(Math.abs(size.height-120*96/25.4)<1,JSON.stringify({width,size}));
+  }
+  assert(await page.locator('#previewActualSize').isChecked());
+  const actualOverflow=await page.evaluate(()=>{const d=document.querySelector('#cardPreviewDialog');return document.documentElement.scrollWidth>innerWidth+2||d.scrollWidth>d.clientWidth+2;});
+  assert(!actualOverflow,`Tamanho real transbordou em ${width}px`);
+  await page.locator('#previewActualSize').uncheck();
+  await page.locator('#previewFront').click();
   const textOverflow=await page.locator('#tcgCardPreview .tcg-description').evaluate(e=>e.scrollHeight>e.clientHeight+2);
-  if(textOverflow)assert((await page.locator('#cardOverflowWarning').textContent()).includes('excede'));
+  if(textOverflow)await page.waitForFunction(()=>document.querySelector('#cardOverflowWarning').textContent.includes('excede'));
   await page.locator('#cardPreviewDialog').evaluate(d=>d.scrollTop=0);
   await page.screenshot({path:`/tmp/card-builder-${width}.png`});
   await page.locator('#previewBack').click();await page.screenshot({path:`/tmp/card-builder-verso-${width}.png`});await page.locator('#previewFront').click();
