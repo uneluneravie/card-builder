@@ -52,3 +52,18 @@ O modelo mantém compatibilidade com os baralhos simples existentes. A aplicaç�
 Execute os testes do modelo com `node tests/model.test.js`. Para conferir a migração, passe o caminho da pasta do projeto Ambrósio como argumento.
 
 Opções também podem apontar para resoluções no verso: o preview da frente mostra apenas a escolha e os pré-requisitos (inclusive disponibilidade para custos). Custos e efeitos aparecem na resolução. Referências a outra carta permitem separar o baralho futuramente. Veja o contrato v2 para o formato.
+
+### Leitura dos diários
+
+Ao abrir uma página existente, o diário exibe o Markdown formatado. Clique em **Editar** para alterar o título e o código Markdown; **Visualizar** mostra o rascunho sem salvar. **Salvar alterações** persiste o conteúdo, e **Cancelar** descarta as alterações não salvas. Novas páginas abrem no editor.
+
+São suportados títulos, listas, destaques, links, tabelas e blocos de código. Para diagramas, use um bloco cercado por três crases com a linguagem `mermaid`, por exemplo:
+
+````markdown
+```mermaid
+flowchart LR
+  Ideia --> Protótipo --> Teste
+```
+````
+
+Markdown e SVG são sanitizados, e diagramas inválidos mostram uma mensagem com o código original. As bibliotecas ficam embarcadas em `vendor/diary-markdown.js`, sem depender de CDN durante a leitura. Para atualizar o bundle: `npm ci` e `npm run build:diary`. O aplicativo continua sem exigir build para uso.

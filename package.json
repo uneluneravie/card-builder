@@ -4,9 +4,16 @@
   "version": "0.2.0",
   "scripts": {
     "test": "node tests/model.test.js",
-    "test:browser": "node tests/browser.test.js"
+    "test:browser": "node tests/browser.test.js",
+    "build:diary": "esbuild tools/diary-vendor.mjs --bundle --minify --format=iife --outfile=vendor/diary-markdown.js"
   },
   "devDependencies": {
+    "esbuild": "0.25.12",
     "playwright": "1.62.1"
+  },
+  "dependencies": {
+    "dompurify": "3.3.1",
+    "marked": "15.0.12",
+    "mermaid": "11.12.0"
   }
 }

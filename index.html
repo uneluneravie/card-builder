@@ -159,8 +159,22 @@
     </form>
   </dialog>
 
-  <dialog id="noteDialog" class="dialog compact">
-    <form id="noteForm"><div class="dialog-head"><div><p class="eyebrow">DIÁRIO</p><h2 id="noteDialogTitle">Nova página</h2></div><button type="button" data-close-dialog aria-label="Fechar">×</button></div><label>Título<input name="title" required placeholder="Título da anotação"></label><label>Conteúdo<textarea name="content" rows="7" placeholder="Escreva livremente. Use # para títulos e - para listas."></textarea></label><div class="format-help"><span><b>#</b> Título</span><span><b>–</b> Lista</span><span><b>**</b> Destaque</span></div><div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button" id="saveNote">Salvar página</button></div></form>
+  <dialog id="noteDialog" class="dialog diary-dialog" aria-labelledby="noteDialogTitle">
+    <form id="noteForm">
+      <div class="dialog-head"><div><p class="eyebrow">DIÁRIO</p><h2 id="noteDialogTitle">Nova página</h2></div><button type="button" data-close-dialog aria-label="Fechar">×</button></div>
+      <article id="notePreview" class="markdown-preview" aria-label="Conteúdo da página"></article>
+      <fieldset id="noteEditor" hidden disabled>
+        <label>Título<input name="title" required placeholder="Título da anotação"></label>
+        <label>Conteúdo em Markdown<textarea name="content" rows="14" placeholder="Escreva em Markdown. Use blocos de código mermaid para diagramas."></textarea></label>
+        <div class="format-help"><span><b>#</b> Título</span><span><b>–</b> Lista</span><span><b>**</b> Destaque</span><span>```mermaid Diagrama</span></div>
+      </fieldset>
+      <div class="dialog-actions">
+        <button type="button" data-close-dialog class="secondary-button" id="closeNote">Fechar</button>
+        <button type="button" class="secondary-button" id="previewNote" hidden>Visualizar</button>
+        <button type="button" class="primary-button" id="editNote">Editar</button>
+        <button type="submit" class="primary-button" id="saveNote" hidden>Salvar página</button>
+      </div>
+    </form>
   </dialog>
 
   <dialog id="deleteProjectDialog" class="dialog compact">
@@ -185,6 +199,8 @@
     </form>
   </dialog>
   <script src="card-model.js"></script>
+  <script src="vendor/diary-markdown.js"></script>
+  <script src="diary-preview.js"></script>
   <script src="app.js"></script>
   <script src="card-editor.js"></script>
   <script src="structured-ui.js"></script>

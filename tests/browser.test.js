@@ -27,6 +27,47 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.locator('[data-project-path]').click();
  await page.waitForSelector('.deck-card');assert.equal(await page.locator('.deck-card').count(),4);
  assert.equal(await page.locator('#cardCount').textContent(),'28');
+ // Diário: criar, abrir em leitura, editar explicitamente e manter Markdown salvo.
+ const markdown = '# Planejamento\n\n**Destaque** e [link](https://example.com)\n\n- Primeiro\n- Segundo\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n```mermaid\nflowchart LR\n A[Ideia] --> B[Teste]\n```\n\n<script>window.diaryXss=true</script><img src=x onerror="window.diaryXss=true">';
+ await page.locator('#newNoteButton').click();
+ await page.locator('#noteForm [name=title]').fill('Plano em Markdown');
+ await page.locator('#noteForm [name=content]').fill(markdown);
+ await page.locator('#saveNote').click();
+ await page.locator('[data-diary-index="0"]').click();
+ assert(await page.locator('#noteEditor').isHidden());
+ assert(await page.locator('#noteForm [name=content]').isDisabled());
+ assert.equal(await page.locator('#notePreview h1').textContent(),'Planejamento');
+ assert.equal(await page.locator('#notePreview strong').textContent(),'Destaque');
+ assert.equal(await page.locator('#notePreview li').count(),2);
+ assert.equal(await page.locator('#notePreview table').count(),1);
+ await page.waitForSelector('#notePreview .diary-diagram svg');
+ assert.equal(await page.evaluate(()=>window.diaryXss),undefined);
+ for(const width of [1280,768,360]) {
+  await page.setViewportSize({width,height:900});
+  assert(await page.locator('#editNote').isVisible());
+  assert(await page.locator('#noteDialog').evaluate(d=>d.scrollWidth<=d.clientWidth+2));
+ }
+ await page.setViewportSize({width:1280,height:900});
+ await page.locator('#editNote').click();
+ assert.equal(await page.locator('#noteForm [name=content]').inputValue(),markdown);
+ await page.locator('#noteForm [name=content]').fill('```mermaid\ninvalid diagram\n```\n\nTexto preservado.');
+ await page.locator('#previewNote').click();
+ await page.waitForSelector('#notePreview .error-state');
+ assert((await page.locator('#notePreview').textContent()).includes('Texto preservado.'));
+ await page.locator('#editNote').click();
+ await page.locator('#noteForm [name=content]').fill(markdown+'\n\nAtualizado.');
+ await page.locator('#saveNote').click();
+ await page.waitForFunction(()=>!document.querySelector('#noteDialog').open);
+ await new Promise((resolve,reject)=>{const deadline=Date.now()+5000;const check=()=>files.get(p+'diario/paginas.json')?.[0]?.conteudo===markdown+'\n\nAtualizado.'?resolve():Date.now()>deadline?reject(new Error('Diário não sincronizado')):setTimeout(check,20);check();});
+ assert.equal(files.get(p+'diario/paginas.json')[0].conteudo,markdown+'\n\nAtualizado.');
+ await page.locator('[data-diary-index="0"]').click();
+ assert(await page.locator('#noteEditor').isHidden());
+ await page.locator('#editNote').click();
+ await page.locator('#noteForm [name=content]').fill('Alteração cancelada');
+ await page.locator('#closeNote').click();
+ await page.locator('[data-diary-index="0"]').click();
+ assert((await page.locator('#notePreview').textContent()).includes('Atualizado.'));
+ await page.locator('#closeNote').click();
  // Un candidato: somente o verso contém o segredo.
  await page.locator('.deck-card').filter({hasText:files.get(p+'baralhos/ambrosio-candidatos.json').nome}).click();
  await page.locator('#openDeckPage').click();

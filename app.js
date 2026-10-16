@@ -299,16 +299,17 @@ function readLocalJson(key, fallback) {
 
 function renderDiary() {
   $('#noteList').innerHTML = diaryEntries.length ? diaryEntries.map((entry, index) => `
-    <button type="button" data-diary-index="${index}" aria-label="Editar ${escapeHtml(entry.titulo)}"><span class="note-icon ${['', 'peach', 'teal-bg'][index]}">▤</span><span><strong>${escapeHtml(entry.titulo)}</strong><small>${escapeHtml(entry.resumo)}</small></span><time>${escapeHtml(entry.data)}<br><b>${escapeHtml(entry.hora)}</b></time></button>
+    <button type="button" data-diary-index="${index}" aria-label="Abrir ${escapeHtml(entry.titulo)}"><span class="note-icon ${['', 'peach', 'teal-bg'][index]}">▤</span><span><strong>${escapeHtml(entry.titulo)}</strong><small>${escapeHtml(entry.resumo)}</small></span><time>${escapeHtml(entry.data)}<br><b>${escapeHtml(entry.hora)}</b></time></button>
   `).join('') : '<p class="empty-state">O diário ainda não tem páginas.</p>';
   $$('[data-diary-index]').forEach((button) => button.addEventListener('click', () => {
     const index = Number(button.dataset.diaryIndex);
     const entry = diaryEntries[index];
     editingDiaryIndex = index;
-    $('#noteDialogTitle').textContent = 'Editar página';
+    $('#noteDialogTitle').textContent = entry.titulo;
     $('#saveNote').textContent = 'Salvar alterações';
     $('#noteForm').elements.title.value = entry.titulo;
     $('#noteForm').elements.content.value = entry.conteudo || entry.resumo || '';
+    setNoteMode(false);
     noteDialog.showModal();
   }));
 }
@@ -502,6 +503,7 @@ $('#newNoteButton').addEventListener('click', () => {
   $('#noteForm').reset();
   $('#noteDialogTitle').textContent = 'Nova página';
   $('#saveNote').textContent = 'Salvar página';
+  setNoteMode(true);
   noteDialog.showModal();
 });
 $('#githubButton').addEventListener('click', () => {
@@ -817,10 +819,33 @@ $$('[data-close-dialog]').forEach((button) => button.addEventListener('click', (
   button.closest('dialog').close('cancel');
 }));
 
+function setNoteMode(editing) {
+  const form = $('#noteForm');
+  $('#noteEditor').hidden = !editing;
+  $('#noteEditor').disabled = !editing;
+  $('#notePreview').hidden = editing;
+  $('#editNote').hidden = editing;
+  $('#previewNote').hidden = !editing;
+  $('#saveNote').hidden = !editing;
+  $('#closeNote').textContent = editing ? 'Cancelar' : 'Fechar';
+  $('#noteDialogTitle').textContent = editing
+    ? (editingDiaryIndex === null ? 'Nova página' : 'Editar página')
+    : (form.elements.title.value || 'Nova página');
+  if (!editing) renderDiaryPreview(form.elements.content.value);
+}
+$('#editNote').addEventListener('click', () => {
+  setNoteMode(true);
+  $('#noteForm').elements.title.focus();
+});
+$('#previewNote').addEventListener('click', () => {
+  setNoteMode(false);
+  $('#editNote').focus();
+});
+
 $('#noteForm').addEventListener('submit', (event) => {
   event.preventDefault();
   const form = event.currentTarget;
-  if (!form.reportValidity() || !activeProject) return;
+  if ($('#noteEditor').disabled || !form.reportValidity() || !activeProject) return;
   const data = new FormData(form);
   const now = new Date();
   const index = editingDiaryIndex ?? diaryEntries.length;

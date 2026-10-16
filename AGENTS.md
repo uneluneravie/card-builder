@@ -35,6 +35,6 @@
 - Validar estados de foco, contraste, formulários e navegação por teclado antes de publicar.
 
 ## Git e entrega
-- Fazer os commits diretamente na branch `main`, conforme autorização do usuário.
+- Sempre que um novo ajuste for concluído, fazer commit e push diretamente na branch `main`, conforme autorização permanente do usuário.
 - Não criar branches de trabalho nem pull requests por padrão; usar outro fluxo apenas quando o usuário solicitar explicitamente.
 - Incluir nos commits somente os arquivos relacionados à tarefa; não versionar dependências locais como `node_modules/`.
