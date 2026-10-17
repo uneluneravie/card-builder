@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20261017-overflow1">
+  <link rel="stylesheet" href="styles.css?v=20261017-scale2">
 </head>
 <body>
   <div class="app-shell">
@@ -136,7 +136,7 @@
 
   <dialog id="cardPreviewDialog" class="dialog card-preview-dialog">
     <div class="card-preview-layout">
-      <div class="preview-panel"><div class="face-switch"><button type="button" id="previewFront" class="secondary-button" aria-pressed="true">Frente</button><button type="button" id="previewBack" class="secondary-button" aria-pressed="false">Verso</button><label class="preview-size-toggle" title="Tamanho real com zoom de 100%: 1 mm = 96 / 25,4 px"><input type="checkbox" id="previewActualSize" role="switch"><span>Tamanho real</span></label></div><div class="preview-viewport"><div id="tcgCardPreview" class="tcg-card"></div></div><p id="cardOverflowWarning" role="status"></p></div>
+      <div class="preview-panel"><div class="face-switch"><button type="button" id="previewFront" class="secondary-button" aria-pressed="true">Frente</button><button type="button" id="previewBack" class="secondary-button" aria-pressed="false">Verso</button></div><div class="preview-viewport"><div class="preview-scale"><div id="tcgCardPreview" class="tcg-card"></div></div></div><p id="cardOverflowWarning" role="status"></p></div>
       <form id="cardForm" class="card-edit-form">
         <div><p class="eyebrow">EDITAR CARTA</p><h2>Conteúdo da carta</h2></div>
         <label>Título<input name="title" required placeholder="Título da carta"></label>
@@ -198,12 +198,12 @@
       <div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button">Salvar definições</button></div>
     </form>
   </dialog>
-  <script src="card-model.js?v=20261017-overflow1"></script>
-  <script src="vendor/diary-markdown.js?v=20261017-overflow1"></script>
-  <script src="diary-preview.js?v=20261017-overflow1"></script>
-  <script src="app.js?v=20261017-overflow1"></script>
-  <script src="card-editor.js?v=20261017-overflow1"></script>
-  <script src="structured-ui.js?v=20261017-overflow1"></script>
+  <script src="card-model.js?v=20261017-scale2"></script>
+  <script src="vendor/diary-markdown.js?v=20261017-scale2"></script>
+  <script src="diary-preview.js?v=20261017-scale2"></script>
+  <script src="app.js?v=20261017-scale2"></script>
+  <script src="card-editor.js?v=20261017-scale2"></script>
+  <script src="structured-ui.js?v=20261017-scale2"></script>
   <script src="vendor/card-pdf.js?v=20261017-pdf1"></script>
   <script src="pdf-layout.js?v=20261017-pdf1"></script>
   <script src="project-pdf.js?v=20261017-pdf1"></script>

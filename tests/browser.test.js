@@ -167,18 +167,22 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   await page.setViewportSize({width,height:900});await page.waitForTimeout(80);
   const overflow=await page.evaluate(()=>{const d=document.querySelector('#cardPreviewDialog');return {page:document.documentElement.scrollWidth>innerWidth+2,dialog:d.scrollWidth>d.clientWidth+2};});
   assert(!overflow.page && !overflow.dialog,JSON.stringify({width,...overflow}));
-  // O tamanho real independe da viewport e permanece ao alternar a face.
-  await page.locator('#previewActualSize').check();
+  assert.equal(await page.locator('#previewActualSize').count(),0);
   for(const face of ['#previewFront','#previewBack']){
    await page.locator(face).click();
-   const size=await page.locator('#tcgCardPreview').boundingBox();
-   assert(Math.abs(size.width-70*96/25.4)<1,JSON.stringify({width,size}));
-   assert(Math.abs(size.height-120*96/25.4)<1,JSON.stringify({width,size}));
+   const metrics=await page.locator('#tcgCardPreview').evaluate(e=>({
+    width:e.offsetWidth,height:e.offsetHeight,shown:e.getBoundingClientRect().width,
+    available:e.closest('.preview-viewport').clientWidth,
+    font:getComputedStyle(e.querySelector('header')).fontSize,
+    overflow:hasCardOverflow(e)
+   }));
+   assert(Math.abs(metrics.width-70*96/25.4)<1);
+   assert(Math.abs(metrics.height-120*96/25.4)<1);
+   assert(Math.abs(metrics.shown-Math.min(metrics.available,70*96/25.4))<1);
+   assert.equal(metrics.font,'14px');
+   const titleInput=await page.locator('#cardForm [name=title]').boundingBox();
+   assert(titleInput.x>=0&&titleInput.x+titleInput.width<=width);
   }
-  assert(await page.locator('#previewActualSize').isChecked());
-  const actualOverflow=await page.evaluate(()=>{const d=document.querySelector('#cardPreviewDialog');return document.documentElement.scrollWidth>innerWidth+2||d.scrollWidth>d.clientWidth+2;});
-  assert(!actualOverflow,`Tamanho real transbordou em ${width}px`);
-  await page.locator('#previewActualSize').uncheck();
   await page.locator('#previewFront').click();
   const textOverflow=await page.locator('#tcgCardPreview .tcg-description').evaluate(e=>e.scrollHeight>e.clientHeight+2);
   if(textOverflow)await page.waitForFunction(()=>document.querySelector('#cardOverflowWarning').textContent.includes('excede'));
@@ -186,6 +190,20 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   await page.screenshot({path:`/tmp/card-builder-${width}.png`});
   await page.locator('#previewBack').click();await page.screenshot({path:`/tmp/card-builder-verso-${width}.png`});await page.locator('#previewFront').click();
  }
+ // A wide card scales text, title and borders together without changing layout/overflow.
+ await page.evaluate(()=>{window.originalPreviewDeck=previewDeckDraft;previewDeckDraft={...previewDeckDraft,tamanho:'Personalizado',tamanhoPersonalizado:{largura:140,altura:180}};renderStructuredPreview();});
+ let canonicalLayout;
+ for(const width of [1280,768,360]) {
+  await page.setViewportSize({width,height:900});await page.waitForTimeout(80);
+  const layout=await page.locator('#tcgCardPreview').evaluate(e=>{
+   const text=e.querySelector('.tcg-description');
+   return {width:e.offsetWidth,height:e.offsetHeight,textWidth:text.clientWidth,textHeight:text.clientHeight,scroll:text.scrollHeight,overflow:hasCardOverflow(e)};
+  });
+  if(canonicalLayout)assert.deepEqual(layout,canonicalLayout);else canonicalLayout=layout;
+  const fit=await page.locator('#tcgCardPreview').evaluate(e=>({shown:e.getBoundingClientRect().width,available:e.closest('.preview-viewport').clientWidth,scale:new DOMMatrix(getComputedStyle(e).transform).a}));
+  assert(fit.shown<=fit.available+1);assert(fit.scale<1);
+ }
+ await page.evaluate(()=>{previewDeckDraft=window.originalPreviewDeck;delete window.originalPreviewDeck;renderStructuredPreview();});
  // Remover uma seção realmente a remove do JSON salvo.
  await page.locator('#cardForm [data-close-dialog]').click();await page.locator('#backToProject').click();
  await page.locator('.deck-card').filter({hasText:files.get(p+'baralhos/ambrosio-quest.json').nome}).click();await page.locator('#openDeckPage').click();await page.locator('[data-card-index="0"]').click();

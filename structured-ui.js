@@ -22,19 +22,13 @@ function renderStructuredPreview() {
   if(!previewCardDraft)return;
   const form=$('#cardForm');
   const card={...previewCardDraft,titulo:form.elements.title.value,descricao:form.elements.description.value};
-  const {width,height}=cardDimensions(previewDeckDraft);
-  const preview=$('#tcgCardPreview');preview.style.aspectRatio=`${width}/${height}`;
-  // CSS pixels at 100% zoom: one inch is 96 px and 25.4 mm.
-  const actualSize=$('#previewActualSize').checked;
-  preview.classList.toggle('actual-size',actualSize);
-  preview.style.width=actualSize?`${width*96/25.4}px`:'';
-  preview.style.height=actualSize?`${height*96/25.4}px`:'';
+  const preview=$('#tcgCardPreview');
+  setPhysicalCardSize(preview,previewDeckDraft);
   fillCardPreview(preview,previewDeckDraft,card,previewFace);
   $('#previewFront').setAttribute('aria-pressed',String(previewFace==='frente'));
   $('#previewBack').setAttribute('aria-pressed',String(previewFace==='verso'));
-  requestAnimationFrame(updatePreviewOverflow);
+  requestAnimationFrame(()=>{fitCardPreview();updatePreviewOverflow();});
 }
-$('#previewActualSize').onchange=renderStructuredPreview;
 $('#previewFront').onclick=()=>{previewFace='frente';renderStructuredPreview();};
 $('#previewBack').onclick=()=>{previewFace='verso';renderStructuredPreview();};
 $('#cardForm').elements.title.addEventListener('input',renderStructuredPreview);
@@ -62,7 +56,21 @@ $('#definitionsForm').onsubmit=event=>{
 };
 
 function updatePreviewOverflow() { const preview=$('#tcgCardPreview'); if(!preview)return; $('#cardOverflowWarning').textContent=hasCardOverflow(preview)?'O conteúdo excede o espaço da carta. Revise o texto ou aumente suas dimensões. Role o preview para ler tudo.':''; }
-new ResizeObserver(updatePreviewOverflow).observe($('#tcgCardPreview'));
+function setPhysicalCardSize(preview,deck) {
+  const {width,height}=cardDimensions(deck);
+  preview.style.width=`${width*96/25.4}px`;
+  preview.style.height=`${height*96/25.4}px`;
+}
+function fitCardPreview() {
+  const preview=$('#tcgCardPreview'),viewport=preview.closest('.preview-viewport');
+  if(!viewport.clientWidth||!preview.offsetWidth)return;
+  const scale=Math.min(1,viewport.clientWidth/preview.offsetWidth);
+  preview.style.transform=`scale(${scale})`;
+  const wrapper=preview.parentElement;
+  wrapper.style.width=`${preview.offsetWidth*scale}px`;
+  wrapper.style.height=`${preview.offsetHeight*scale}px`;
+}
+new ResizeObserver(fitCardPreview).observe($('#tcgCardPreview').closest('.preview-viewport'));
 
 // Both the visible preview and background measurements use the same markup.
 function fillCardPreview(preview,deck,card,faceName) {
@@ -97,13 +105,12 @@ async function scheduleCardOverflowScan() {
   const decks=[...activeDecks];
   const host=document.createElement('div');
   host.className='card-measure-host';host.setAttribute('aria-hidden','true');host.inert=true;
-  const preview=document.createElement('div');preview.className='tcg-card actual-size';host.append(preview);document.body.append(host);
+  const preview=document.createElement('div');preview.className='tcg-card';host.append(preview);document.body.append(host);
   const idle=()=>new Promise(resolve=>window.requestIdleCallback?requestIdleCallback(resolve,{timeout:150}):setTimeout(resolve,0));
   try {
     for(const deck of decks) {
       const results=[];cardOverflowResults.set(deck,results);
-      const {width,height}=cardDimensions(deck);
-      preview.style.width=`${width*96/25.4}px`;preview.style.height=`${height*96/25.4}px`;
+      setPhysicalCardSize(preview,deck);
       const cards=deckCards(deck);
       for(let i=0;i<cards.length;i++) {
         await idle();
@@ -118,4 +125,3 @@ async function scheduleCardOverflowScan() {
     }
   } finally {host.remove();}
 }
-window.addEventListener('resize',scheduleCardOverflowScan);
