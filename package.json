@@ -3,9 +3,10 @@
   "private": true,
   "version": "0.2.0",
   "scripts": {
-    "test": "node tests/model.test.js",
+    "test": "node tests/model.test.js && node tests/pdf-layout.test.js",
     "test:browser": "node tests/browser.test.js",
-    "build:diary": "esbuild tools/diary-vendor.mjs --bundle --minify --format=iife --outfile=vendor/diary-markdown.js"
+    "build:diary": "esbuild tools/diary-vendor.mjs --bundle --minify --format=iife --outfile=vendor/diary-markdown.js",
+    "build:pdf": "esbuild tools/pdf-vendor.mjs --bundle --minify --format=iife --outfile=vendor/card-pdf.js"
   },
   "devDependencies": {
     "esbuild": "0.25.12",
@@ -13,6 +14,8 @@
   },
   "dependencies": {
     "dompurify": "3.3.1",
+    "html-to-image": "1.11.13",
+    "jspdf": "3.0.4",
     "marked": "15.0.12",
     "mermaid": "11.12.0"
   }

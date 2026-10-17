@@ -30,6 +30,20 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.locator('[data-project-path]').click();
  await page.waitForSelector('.deck-card');assert.equal(await page.locator('.deck-card').count(),4);
  assert.equal(await page.locator('#cardCount').textContent(),'28');
+ // Exportação real: arquivo PDF, medidas físicas e botão nos três breakpoints.
+ for(const width of [360,768,1280]) {
+  await page.setViewportSize({width,height:900});
+  assert(await page.locator('#downloadProjectPdf').isVisible());
+  const box=await page.locator('#downloadProjectPdf').boundingBox();assert(box.height>=44);assert(box.x>=0&&box.x+box.width<=width);
+ }
+ await page.evaluate(()=>{window.pdfSavedDecks=activeDecks;activeDecks=[{nome:'Impressão',tamanho:'Padrão (63 × 88 mm)',quantidade:9,cartas:Array.from({length:9},(_,i)=>({id:'pdf-'+i,titulo:'Carta '+i,descricao:'Teste de impressão.'}))}];});
+ const downloadPromise=page.waitForEvent('download');
+ await page.locator('#downloadProjectPdf').click();
+ const download=await downloadPromise;
+ const pdf=fs.readFileSync(await download.path());assert.equal(pdf.subarray(0,5).toString(),'%PDF-');
+ const pdfText=pdf.toString('latin1');assert(pdfText.includes('/Count 1'));const media=pdfText.match(/\/MediaBox \[([^\]]+)\]/)[1].trim().split(/\s+/).map(Number);assert(Math.abs(Math.min(media[2],media[3])-210*72/25.4)<0.01);assert(Math.abs(Math.max(media[2],media[3])-297*72/25.4)<0.01);
+ await page.evaluate(()=>{activeDecks=window.pdfSavedDecks;delete window.pdfSavedDecks;});
+
  // Páginas reais do projeto: ambas devem abrir no preview, inclusive o mapa completo.
  for (const index of [0,1]) {
   await page.locator(`[data-diary-index="${index}"]`).click();

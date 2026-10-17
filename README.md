@@ -67,3 +67,9 @@ flowchart LR
 ````
 
 Markdown e SVG são sanitizados, e diagramas inválidos mostram uma mensagem com o código original. As bibliotecas ficam embarcadas em `vendor/diary-markdown.js`, sem depender de CDN durante a leitura. Para atualizar o bundle: `npm ci` e `npm run build:diary`. O aplicativo continua sem exigir build para uso.
+
+### PDF para impressão
+
+Na página principal de um projeto, **Baixar PDF dos baralhos** exporta as frentes de todas as cartas, inclusive espaços ainda sem conteúdo. O arquivo usa A4, margem de 10 mm e espaçamento zero, preservando as dimensões de cada baralho. A distribuição MaxRects compara três ordenações em retrato e paisagem e permite rotação; busca reduzir páginas sem garantir o ótimo matemático global. Imprima em **Tamanho real / 100%**, desativando o ajuste à página.
+
+As cartas são rasterizadas a 300 dpi com a composição do preview. Texto que excede a carta ou dimensões incompatíveis com A4 interrompem a exportação com aviso. Imagens externas precisam permitir CORS. O PDF contém somente frentes; não faz imposição de versos para impressão duplex. Execute `npm run build:pdf` ao atualizar as bibliotecas da exportação.
