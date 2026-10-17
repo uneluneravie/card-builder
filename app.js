@@ -299,7 +299,7 @@ function readLocalJson(key, fallback) {
 
 function renderDiary() {
   $('#noteList').innerHTML = diaryEntries.length ? diaryEntries.map((entry, index) => `
-    <button type="button" data-diary-index="${index}" aria-label="Abrir ${escapeHtml(entry.titulo)}"><span class="note-icon ${['', 'peach', 'teal-bg'][index]}">▤</span><span><strong>${escapeHtml(entry.titulo)}</strong><small>${escapeHtml(entry.resumo)}</small></span><time>${escapeHtml(entry.data)}<br><b>${escapeHtml(entry.hora)}</b></time></button>
+    <button type="button" data-diary-index="${index}" aria-label="Abrir ${escapeHtml(entry.titulo)}"><span class="note-icon ${['', 'peach', 'teal-bg'][index]}">▤</span><span><strong>${escapeHtml(entry.titulo)}</strong><small>${entry.tipo === 'manual' ? 'Manual de jogo · ' : ''}${escapeHtml(entry.resumo)}</small></span><time>${escapeHtml(entry.data)}<br><b>${escapeHtml(entry.hora)}</b></time></button>
   `).join('') : '<p class="empty-state">O diário ainda não tem páginas.</p>';
   $$('[data-diary-index]').forEach((button) => button.addEventListener('click', () => {
     const index = Number(button.dataset.diaryIndex);
@@ -307,6 +307,7 @@ function renderDiary() {
     editingDiaryIndex = index;
     $('#noteDialogTitle').textContent = entry.titulo;
     $('#saveNote').textContent = 'Salvar alterações';
+    $('#noteForm').elements.type.value = entry.tipo === 'manual' ? 'manual' : 'diario';
     $('#noteForm').elements.title.value = entry.titulo;
     $('#noteForm').elements.content.value = entry.conteudo || entry.resumo || '';
     setNoteMode(false);
@@ -827,6 +828,11 @@ function setNoteMode(editing) {
   $('#editNote').hidden = editing;
   $('#previewNote').hidden = !editing;
   $('#saveNote').hidden = !editing;
+  const savedNote = diaryEntries[editingDiaryIndex];
+  $('#downloadManualPdf').hidden = editing || savedNote?.tipo !== 'manual'
+    || form.elements.type.value !== 'manual' || form.elements.title.value !== savedNote.titulo
+    || form.elements.content.value !== (savedNote.conteudo || savedNote.resumo || '');
+  $('#noteDialog .eyebrow').textContent = form.elements.type.value === 'manual' ? 'MANUAL DE JOGO' : 'DIÁRIO';
   $('#closeNote').textContent = editing ? 'Cancelar' : 'Fechar';
   $('#noteDialogTitle').textContent = editing
     ? (editingDiaryIndex === null ? 'Nova página' : 'Editar página')
@@ -852,6 +858,7 @@ $('#noteForm').addEventListener('submit', (event) => {
   const previousEntry = diaryEntries[index] || {};
   const entry = {
     ...previousEntry,
+    tipo: data.get('type') === 'manual' ? 'manual' : 'diario',
     titulo: data.get('title').trim(),
     conteudo: data.get('content').trim(),
     resumo: data.get('content').trim().replace(/\s+/g, ' ').slice(0, 55) || 'Página sem conteúdo',

@@ -73,3 +73,9 @@ Markdown e SVG são sanitizados, e diagramas inválidos mostram uma mensagem com
 Na página principal de um projeto, **Baixar PDF dos baralhos** exporta as frentes de todas as cartas, inclusive espaços ainda sem conteúdo. O arquivo usa A4, margem de 10 mm e espaçamento zero, preservando as dimensões de cada baralho. A distribuição MaxRects compara três ordenações em retrato e paisagem e permite rotação; busca reduzir páginas sem garantir o ótimo matemático global. Imprima em **Tamanho real / 100%**, desativando o ajuste à página.
 
 As cartas são rasterizadas a 300 dpi com a composição do preview. Texto que excede a carta ou dimensões incompatíveis com A4 interrompem a exportação com aviso. Imagens externas precisam permitir CORS. O PDF contém somente frentes; não faz imposição de versos para impressão duplex. Execute `npm run build:pdf` ao atualizar as bibliotecas da exportação.
+
+### Manual de jogo
+
+No editor de páginas do diário, escolha **Manual de jogo** em **Tipo de página**. As páginas antigas continuam como diário; nenhum conteúdo é convertido automaticamente. O tipo é salvo no campo opcional `tipo` (`manual` ou `diario`) de `diario/paginas.json`.
+
+Ao abrir um manual salvo, **Baixar PDF do manual** exporta somente aquela página, sem incluir registros de design ou spoilers de outras anotações. A exportação usa Markdown sanitizado, a identidade em tons quentes e folhas A4 com margem de 10 mm, mantendo títulos com o primeiro bloco da seção. Se um bloco for maior que a área imprimível, a exportação pede sua divisão em parágrafos menores. O PDF dos baralhos continua disponível na visão geral do projeto.

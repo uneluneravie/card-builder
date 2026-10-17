@@ -35,3 +35,13 @@
 .diary-dialog{width:min(860px,calc(100% - 30px))}.diary-dialog .dialog-head h2{overflow-wrap:anywhere}.diary-dialog fieldset{border:0;padding:0;margin:0;min-width:0}.diary-dialog textarea{font-family:ui-monospace,monospace;line-height:1.6;tab-size:2}.diary-dialog .dialog-actions{flex-wrap:wrap}.diary-dialog button{min-height:44px}.markdown-preview{line-height:1.75;overflow-wrap:anywhere;min-width:0}.markdown-preview h1,.markdown-preview h2,.markdown-preview h3{line-height:1.3;margin:1.2em 0 .5em}.markdown-preview> :first-child{margin-top:0}.markdown-preview pre{overflow:auto;max-width:100%;padding:16px;border-radius:8px;background:var(--bg,#f4efe8);font-size:13px;white-space:pre}.markdown-preview code{font-family:ui-monospace,monospace}.markdown-preview blockquote{margin:16px 0;padding:0 16px;border-left:3px solid var(--purple);color:var(--muted)}.markdown-preview img{max-width:100%;height:auto}.markdown-preview table{display:block;max-width:100%;overflow:auto;border-collapse:collapse}.markdown-preview th,.markdown-preview td{padding:8px 12px;border:1px solid var(--line)}.markdown-preview a{color:var(--purple-dark);text-decoration:underline}.diary-diagram{margin:20px 0;max-width:100%;overflow:auto}.diary-diagram svg{display:block;max-width:100%;height:auto;margin:auto}.markdown-preview input[type=checkbox]{width:auto;min-height:auto}
 
 .project-actions button{min-height:44px}.project-actions{display:flex;flex-wrap:wrap;gap:10px}.pdf-render-host{position:fixed;left:-10000px;top:0;pointer-events:none}.pdf-render-host .tcg-card{max-width:none;margin:0;box-shadow:none;border-radius:0}.pdf-render-host .tcg-frame header{font-size:14px}
+
+.manual-pdf-page{box-sizing:border-box;width:718px;height:1046px;padding:20px 24px;background:#faf4e8;color:#332b24;font-family:Georgia,serif;font-size:15px;line-height:1.5;overflow:hidden;display:flow-root;overflow-wrap:anywhere}
+.manual-pdf-page h1{font-size:27px;line-height:1.2;margin:0 0 20px;color:#62472f}
+.manual-pdf-page h2{font-size:19px;line-height:1.3;margin:18px 0 8px;color:#62472f}
+.manual-pdf-page h3{font-size:17px;margin:14px 0 6px}
+.manual-pdf-page p,.manual-pdf-page ul,.manual-pdf-page ol{margin:0 0 12px}
+.manual-pdf-page img,.manual-pdf-page svg{max-width:100%;height:auto}
+.manual-pdf-page pre{white-space:pre-wrap}
+.manual-pdf-page table{border-collapse:collapse;width:100%}
+.manual-pdf-page td,.manual-pdf-page th{border:1px solid #b9a68e;padding:5px}

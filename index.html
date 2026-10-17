@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20261016-diary2">
+  <link rel="stylesheet" href="styles.css?v=20261017-manual">
 </head>
 <body>
   <div class="app-shell">
@@ -164,6 +164,7 @@
       <div class="dialog-head"><div><p class="eyebrow">DIÁRIO</p><h2 id="noteDialogTitle">Nova página</h2></div><button type="button" data-close-dialog aria-label="Fechar">×</button></div>
       <article id="notePreview" class="markdown-preview" aria-label="Conteúdo da página"></article>
       <fieldset id="noteEditor" hidden disabled>
+        <label>Tipo de página<select name="type"><option value="diario">Diário</option><option value="manual">Manual de jogo</option></select></label>
         <label>Título<input name="title" required placeholder="Título da anotação"></label>
         <label>Conteúdo em Markdown<textarea name="content" rows="14" placeholder="Escreva em Markdown. Use blocos de código mermaid para diagramas."></textarea></label>
         <div class="format-help"><span><b>#</b> Título</span><span><b>–</b> Lista</span><span><b>**</b> Destaque</span><span>```mermaid Diagrama</span></div>
@@ -171,6 +172,7 @@
       <div class="dialog-actions">
         <button type="button" data-close-dialog class="secondary-button" id="closeNote">Fechar</button>
         <button type="button" class="secondary-button" id="previewNote" hidden>Visualizar</button>
+        <button type="button" class="secondary-button" id="downloadManualPdf" hidden>Baixar PDF do manual</button>
         <button type="button" class="primary-button" id="editNote">Editar</button>
         <button type="submit" class="primary-button" id="saveNote" hidden>Salvar página</button>
       </div>
@@ -198,15 +200,15 @@
       <div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button">Salvar definições</button></div>
     </form>
   </dialog>
-  <script src="card-model.js?v=20261016-diary2"></script>
-  <script src="vendor/diary-markdown.js?v=20261016-diary2"></script>
-  <script src="diary-preview.js?v=20261016-diary2"></script>
-  <script src="app.js?v=20261016-diary2"></script>
-  <script src="card-editor.js?v=20261016-diary2"></script>
-  <script src="structured-ui.js?v=20261016-diary2"></script>
+  <script src="card-model.js?v=20261017-manual"></script>
+  <script src="vendor/diary-markdown.js?v=20261017-manual"></script>
+  <script src="diary-preview.js?v=20261017-manual"></script>
+  <script src="app.js?v=20261017-manual"></script>
+  <script src="card-editor.js?v=20261017-manual"></script>
+  <script src="structured-ui.js?v=20261017-manual"></script>
   <script src="vendor/card-pdf.js?v=20261017-pdf1"></script>
   <script src="pdf-layout.js?v=20261017-pdf1"></script>
-  <script src="project-pdf.js?v=20261017-pdf1"></script>
+  <script src="project-pdf.js?v=20261017-manual"></script>
 </body>
 </html>
 
