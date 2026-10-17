@@ -315,6 +315,7 @@ function renderDiary() {
 }
 
 function renderDecks(decks) {
+  scheduleCardOverflowScan();
   const cards = decks.map((deck, index) => {
     const progress = Math.round((deck.cartasProntas / deck.quantidade) * 100);
     const theme = ['heroes', 'relics', 'lands'][index % 3];
@@ -416,6 +417,8 @@ function openDeckPage(index) {
     const cardIndex = Number(button.dataset.cardIndex);
     openCardPreview(deck, deckCards(deck)[cardIndex], cardIndex);
   }));
+  updateCardOverflowBadges();
+  scheduleCardOverflowScan();
   history.replaceState(null, '', `#projeto/${activeProject.path}/baralhos/${index + 1}`);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }

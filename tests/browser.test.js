@@ -30,6 +30,27 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.locator('[data-project-path]').click();
  await page.waitForSelector('.deck-card');assert.equal(await page.locator('.deck-card').count(),4);
  assert.equal(await page.locator('#cardCount').textContent(),'28');
+ assert.equal(await page.locator('.hero-title button').count(),0);
+ await page.waitForFunction(()=>activeDecks.every(d=>cardOverflowResults.get(d)?.length===deckCards(d).length));
+ // Measurement runs before opening any card; both faces and edits are checked.
+ await page.evaluate(async()=>{
+  window.originalOverflowDecks=activeDecks;
+  activeDecks=[{nome:'Overflow',quantidade:3,tamanho:'Padrão (63 × 88 mm)',cartas:[
+   {titulo:'Curta',descricao:'Texto curto.'},
+   {titulo:'Frente longa',descricao:'Texto longo. '.repeat(500)},
+   {titulo:'Verso longo',descricao:'Texto curto.',verso:{descricao:'Texto longo. '.repeat(500)}}
+  ]}];
+  await scheduleCardOverflowScan();openDeckPage(0);
+ });
+ await page.waitForFunction(()=>cardOverflowResults.get(activeDecks[0])?.length===3);
+ assert.equal(await page.locator('[data-card-index="0"] .card-overflow-badge').count(),0);
+ assert((await page.locator('[data-card-index="1"] .card-overflow-badge').getAttribute('aria-label')).includes('frente'));
+ assert((await page.locator('[data-card-index="2"] .card-overflow-badge').getAttribute('aria-label')).includes('verso'));
+ await page.evaluate(async()=>{activeDecks[0].cartas[1].descricao='Texto curto.';await scheduleCardOverflowScan();});
+ assert.equal(await page.locator('[data-card-index="1"] .card-overflow-badge').count(),0);
+ await page.evaluate(()=>{activeDecks=window.originalOverflowDecks;delete window.originalOverflowDecks;});
+ await page.locator('#backToProject').click();
+
  // Exportação real: arquivo PDF, medidas físicas e botão nos três breakpoints.
  for(const width of [360,768,1280]) {
   await page.setViewportSize({width,height:900});
@@ -131,7 +152,8 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  // Preview em três tamanhos, sem overflow horizontal da página/dialog.
  await page.locator('.deck-card').filter({hasText:'Situações'}).click();await page.locator('#openDeckPage').click();await page.locator('[data-card-index="8"]').click();
  // Frente pública: pré-requisitos, sem pagamento ou resultados.
- const front=await page.locator('#tcgCardPreview').textContent();assert(front.includes('Requer:'));assert(front.includes('Provisões'));assert(!front.includes('Resolver:'));assert(!front.includes('Pagamento:'));assert(!front.includes('Alarme:'));
+ const front=await page.locator('#tcgCardPreview').textContent();assert(!front.includes('Escolham uma opção antes de virar a carta.'));
+ const gap=await page.locator('#tcgCardPreview').evaluate(e=>e.querySelector('.tcg-description').getBoundingClientRect().top-e.querySelector('header').getBoundingClientRect().bottom);assert(gap>=8);assert(front.includes('Requer:'));assert(front.includes('Provisões'));assert(!front.includes('Resolver:'));assert(!front.includes('Pagamento:'));assert(!front.includes('Alarme:'));
  await page.locator('#previewBack').click();assert((await page.locator('#tcgCardPreview').textContent()).includes('Resolver:'));assert((await page.locator('#tcgCardPreview').textContent()).includes('Alarme:'));
  await page.locator('#previewFront').click();
  // Editar a resolução no verso, sem tocar em JSON.

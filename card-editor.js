@@ -91,7 +91,6 @@ const CardEditor = (() => {
     for(const s of c.secoes||[])html+=`<h3>${esc(s.titulo)}</h3><p>${esc(s.texto)}</p>`;
     for(const r of c.resolucoes||[])html+=`<section class="resolution"><h3>${esc(r.titulo||r.id)} <small class="resolution-code">${esc(r.id)}</small></h3>${r.texto?`<p>${esc(r.texto)}</p>`:''}${r.custos?.length?`<p><b>Pagamento:</b> ${esc(r.custos.map(describe).join('; '))}</p>`:''}<p><b>Resolver:</b> ${esc((r.efeitos||[]).map(describe).join('; '))}</p></section>`;
     if(face!=='verso'){
-      if(card.opcoes?.some(o=>o.resolucao))html+='<p class="resolution-reference">Escolham uma opção antes de virar a carta.</p>';
       for(const o of card.opcoes||[]){
         const requirement=CardModel.publicRequirements(card,o,activeDecks);
         html+=`<section><h3>${esc(o.rotulo)}${o.resolucao?` <small class="resolution-code">${esc(o.resolucao.resolucaoId)}${o.resolucao.cartaId?` · ${esc(o.resolucao.cartaId)}`:''}</small>`:''}</h3>${o.texto?`<p>${esc(o.texto)}</p>`:''}${requirement?`<p><b>Requer:</b> ${esc(describe(requirement))}</p>`:''}`;

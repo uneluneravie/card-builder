@@ -22,8 +22,6 @@ function renderStructuredPreview() {
   if(!previewCardDraft)return;
   const form=$('#cardForm');
   const card={...previewCardDraft,titulo:form.elements.title.value,descricao:form.elements.description.value};
-  const face=previewFace==='verso'?card.verso||{}:card;
-  const image=face.imagem||(previewFace==='verso'?previewDeckDraft.imagemVerso:'');
   const {width,height}=cardDimensions(previewDeckDraft);
   const preview=$('#tcgCardPreview');preview.style.aspectRatio=`${width}/${height}`;
   // CSS pixels at 100% zoom: one inch is 96 px and 25.4 mm.
@@ -31,8 +29,7 @@ function renderStructuredPreview() {
   preview.classList.toggle('actual-size',actualSize);
   preview.style.width=actualSize?`${width*96/25.4}px`:'';
   preview.style.height=actualSize?`${height*96/25.4}px`:'';
-  preview.innerHTML=`<div class="tcg-frame structured-frame"><header>${escapeHtml(face.titulo||card.titulo)}${previewFace==='verso'?' — Verso':''}</header>${image?`<div class="tcg-art" style="background-image:url('${escapeHtml(image)}')"></div>`:''}<div class="tcg-description">${CardEditor.content(card,previewFace)}</div><footer><span>${escapeHtml(card.id||'')}</span><small>${escapeHtml(previewDeckDraft.nome)}</small></footer></div>`;
-  if(previewDeckDraft.imagemFrame)preview.firstElementChild.style.backgroundImage=`url("${previewDeckDraft.imagemFrame.replaceAll('"','%22')}")`;
+  fillCardPreview(preview,previewDeckDraft,card,previewFace);
   $('#previewFront').setAttribute('aria-pressed',String(previewFace==='frente'));
   $('#previewBack').setAttribute('aria-pressed',String(previewFace==='verso'));
   requestAnimationFrame(updatePreviewOverflow);
@@ -64,5 +61,61 @@ $('#definitionsForm').onsubmit=event=>{
   syncCompletedSave();$('#definitionsDialog').close();showToast('Definições salvas','Condições, recursos, tags e zonas atualizados.');
 };
 
-function updatePreviewOverflow() { const text=$('#tcgCardPreview .tcg-description'); if(!text)return; $('#cardOverflowWarning').textContent=text.scrollHeight>text.clientHeight+2?'O conteúdo excede o espaço da carta. Revise o texto ou aumente suas dimensões. Role o preview para ler tudo.':''; }
+function updatePreviewOverflow() { const preview=$('#tcgCardPreview'); if(!preview)return; $('#cardOverflowWarning').textContent=hasCardOverflow(preview)?'O conteúdo excede o espaço da carta. Revise o texto ou aumente suas dimensões. Role o preview para ler tudo.':''; }
 new ResizeObserver(updatePreviewOverflow).observe($('#tcgCardPreview'));
+
+// Both the visible preview and background measurements use the same markup.
+function fillCardPreview(preview,deck,card,faceName) {
+  const face=faceName==='verso'?card.verso||{}:card;
+  const image=face.imagem||(faceName==='verso'?deck.imagemVerso:'');
+  preview.innerHTML=`<div class="tcg-frame structured-frame"><header>${escapeHtml(face.titulo||card.titulo)}${faceName==='verso'?' — Verso':''}</header>${image?`<div class="tcg-art" style="background-image:url('${escapeHtml(image)}')"></div>`:''}<div class="tcg-description">${CardEditor.content(card,faceName)}</div><footer><span>${escapeHtml(card.id||'')}</span><small>${escapeHtml(deck.nome)}</small></footer></div>`;
+  if(deck.imagemFrame)preview.firstElementChild.style.backgroundImage=`url("${deck.imagemFrame.replaceAll('"','%22')}")`;
+}
+function hasCardOverflow(preview) {
+  return [...preview.querySelectorAll('header,.tcg-description,footer')].some(e=>e.scrollHeight>e.clientHeight+2||e.scrollWidth>e.clientWidth+2);
+}
+const cardOverflowResults=new WeakMap();
+let overflowScanVersion=0;
+function updateCardOverflowBadges() {
+  const deck=activeDecks[viewingDeckIndex];
+  if(!deck)return;
+  for(const button of document.querySelectorAll('[data-card-index]')) {
+    button.querySelector('.card-overflow-badge')?.remove();
+    const result=cardOverflowResults.get(deck)?.[Number(button.dataset.cardIndex)];
+    if(!result?.length)continue;
+    const badge=document.createElement('span');
+    badge.className='card-overflow-badge';
+    badge.textContent='⚠ Texto excedente';
+    const label=`Texto excede o espaço da carta: ${result.join(' e ')} (tamanho real)`;
+    badge.title=label;badge.setAttribute('aria-label',label);
+    button.querySelector('.collection-card-copy').append(badge);
+  }
+}
+async function scheduleCardOverflowScan() {
+  const version=++overflowScanVersion;
+  await document.fonts.ready;
+  const decks=[...activeDecks];
+  const host=document.createElement('div');
+  host.className='card-measure-host';host.setAttribute('aria-hidden','true');host.inert=true;
+  const preview=document.createElement('div');preview.className='tcg-card actual-size';host.append(preview);document.body.append(host);
+  const idle=()=>new Promise(resolve=>window.requestIdleCallback?requestIdleCallback(resolve,{timeout:150}):setTimeout(resolve,0));
+  try {
+    for(const deck of decks) {
+      const results=[];cardOverflowResults.set(deck,results);
+      const {width,height}=cardDimensions(deck);
+      preview.style.width=`${width*96/25.4}px`;preview.style.height=`${height*96/25.4}px`;
+      const cards=deckCards(deck);
+      for(let i=0;i<cards.length;i++) {
+        await idle();
+        if(version!==overflowScanVersion)return;
+        const faces=[];
+        for(const face of cards[i].verso?['frente','verso']:['frente']) {
+          fillCardPreview(preview,deck,cards[i],face);
+          if(hasCardOverflow(preview))faces.push(face);
+        }
+        results[i]=faces;updateCardOverflowBadges();
+      }
+    }
+  } finally {host.remove();}
+}
+window.addEventListener('resize',scheduleCardOverflowScan);
