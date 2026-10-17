@@ -97,6 +97,34 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.locator('[data-diary-index="2"]').click();
  assert((await page.locator('#notePreview').textContent()).includes('Atualizado.'));
  await page.locator('#closeNote').click();
+ // Manual: tipo persistido, PDF A4 paginado e nenhum registro de design incluído.
+ await page.locator('[data-diary-index="2"]').click();
+ await page.locator('#editNote').click();
+ await page.locator('#noteForm [name=type]').selectOption('manual');
+ await page.locator('#noteForm [name=title]').fill('Como contar esta história');
+ const manual = '# Uma história construída em conjunto\n\n' + Array.from({length:16}, (_,i)=>'## Seção '+i+'\n\n'+('Criem personagens e retomem os detalhes estabelecidos. '.repeat(8))).join('\n\n');
+ await page.locator('#noteForm [name=content]').fill(manual);
+ await page.locator('#saveNote').click();
+ await page.locator('[data-diary-index="2"]').click();
+ assert(await page.locator('#downloadManualPdf').isVisible());
+ for(const width of [360,768,1280]) {
+  await page.setViewportSize({width,height:900});
+  assert(await page.locator('#downloadManualPdf').isVisible());
+  assert(await page.locator('#noteDialog').evaluate(d=>d.scrollWidth<=d.clientWidth+2));
+ }
+ const manualDownloadPromise = page.waitForEvent('download');
+ await page.locator('#downloadManualPdf').click();
+ const manualDownload = await manualDownloadPromise;
+ const manualPdf = fs.readFileSync(await manualDownload.path());
+ assert.equal(manualPdf.subarray(0,5).toString(),'%PDF-');
+ assert(Number(manualPdf.toString('latin1').match(/\/Count (\d+)/)[1])>1);
+ await page.waitForFunction(()=>!document.querySelector('#downloadManualPdf').disabled);
+ await page.locator('#editNote').click();
+ assert.equal(await page.locator('#noteForm [name=type]').inputValue(),'manual');
+ await page.locator('#closeNote').click();
+ await page.locator('[data-diary-index="0"]').click();
+ assert(await page.locator('#downloadManualPdf').isHidden());
+ await page.locator('#closeNote').click();
  // Un candidato: somente o verso contém o segredo.
  await page.locator('.deck-card').filter({hasText:files.get(p+'baralhos/ambrosio-candidatos.json').nome}).click();
  await page.locator('#openDeckPage').click();

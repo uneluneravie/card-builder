@@ -40,3 +40,80 @@ $('#downloadProjectPdf').addEventListener('click', async function() {
     host.remove();button.disabled=false;button.textContent='Baixar PDF dos baralhos';
   }
 });
+
+/* Cada página marcada como manual pode ser exportada sem incluir notas de design. */
+$('#downloadManualPdf').addEventListener('click', async function () {
+  const button = this;
+  const entry = diaryEntries[editingDiaryIndex];
+  if (!entry || entry.tipo !== 'manual') return;
+  const host = document.createElement('div');
+  host.className = 'pdf-render-host';
+  host.setAttribute('aria-hidden', 'true');
+  document.body.append(host);
+  button.disabled = true;
+  try {
+    const source = document.createElement('div');
+    source.innerHTML = DiaryMarkdown.html(entry.conteudo || '');
+    // Diagramas do manual usam a mesma sanitização do preview.
+    let diagram = 0;
+    for (const code of source.querySelectorAll('pre > code.language-mermaid')) {
+      const figure = document.createElement('figure');
+      figure.innerHTML = await DiaryMarkdown.diagram(`manual-pdf-${Date.now()}-${++diagram}`, code.textContent);
+      code.parentElement.replaceWith(figure);
+    }
+    const title = document.createElement('h1');
+    title.textContent = entry.titulo;
+    source.prepend(title);
+    await document.fonts.ready;
+    const pages = [];
+    function newPage() {
+      const node = document.createElement('article');
+      node.className = 'manual-pdf-page';
+      host.append(node);
+      pages.push(node);
+      return node;
+    }
+    let page = newPage();
+    const blocks = Array.from(source.children);
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i];
+      // Mantém cada título junto do primeiro bloco de sua seção.
+      const group = [block];
+      if (/^H[1-6]$/.test(block.tagName) && blocks[i + 1]) group.push(blocks[++i]);
+      page.append(...group);
+      for (const img of page.querySelectorAll('img')) {
+        if (!img.complete) await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = () => reject(Error('Não foi possível carregar uma imagem do manual.'));
+        });
+      }
+      if (page.scrollHeight > page.clientHeight + 1) {
+        group.forEach(node => node.remove());
+        if (!page.children.length) throw Error('Uma seção do manual excede uma página A4. Divida o texto em parágrafos menores.');
+        page = newPage();
+        page.append(...group);
+        if (page.scrollHeight > page.clientHeight + 1) throw Error('Uma seção do manual excede uma página A4. Divida o texto em parágrafos menores.');
+      }
+    }
+    const { jsPDF, toCanvas } = CardPdfVendor;
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+    pdf.setProperties({ title: `${activeProject.nome} — ${entry.titulo}` });
+    for (const [index, node] of pages.entries()) {
+      if (index) pdf.addPage();
+      button.textContent = `Gerando PDF… ${index + 1}/${pages.length}`;
+      const canvas = await toCanvas(node, { pixelRatio: 300 / 96, preferredFontFormat: 'woff2' });
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, 277, undefined, 'FAST');
+      pdf.setFontSize(9);
+      pdf.text(`${index + 1} / ${pages.length}`, 200, 292, { align: 'right' });
+      canvas.width = 0;
+    }
+    pdf.save(`${slugify(entry.titulo) || 'manual'}.pdf`);
+    showToast('Manual exportado', `${pages.length} página(s) A4.`);
+  } catch (error) {
+    showToast('Não foi possível gerar o manual', error.message);
+  } finally {
+    host.remove();
+    button.disabled = false;
+    button.textContent = 'Baixar PDF do manual';
+  }
+});
