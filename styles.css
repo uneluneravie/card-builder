@@ -47,3 +47,7 @@
 #tcgCardPreview{position:absolute;top:0;left:0;max-width:none;margin:0;transform-origin:top left}
 .structured-frame header{font-size:14px;overflow-wrap:anywhere}
 .card-edit-form,.card-edit-form label,.card-edit-form input,.card-edit-form textarea{min-width:0;max-width:100%}
+
+.structured-frame .tcg-description{font-family:var(--card-text-font,Georgia,serif);font-size:var(--card-text-size,9pt)}
+.structured-frame .tcg-description h3{font-size:1em}
+.structured-frame .tcg-description .resolution-code{font-size:.833333em}

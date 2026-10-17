@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20261017-scale2">
+  <link rel="stylesheet" href="styles.css?v=20261017-font1">
 </head>
 <body>
   <div class="app-shell">
@@ -125,6 +125,8 @@
           <label>Largura (mm)<input name="customWidth" type="number" min="1" max="1000" step="0.1" inputmode="decimal"></label>
           <label>Altura (mm)<input name="customHeight" type="number" min="1" max="1000" step="0.1" inputmode="decimal"></label>
         </fieldset>
+        <label>Fonte dos textos<select name="textFont"><option>Arial</option><option>Calibri</option><option>Times New Roman</option><option selected>Georgia</option><option>Verdana</option><option>Tahoma</option></select></label>
+        <label>Tamanho dos textos (pt)<input name="textSize" type="number" min="1" max="72" step="0.5" value="9" required><small>Em pontos, como no Word e Google Docs. Ex.: Arial, 10 pt.</small></label>
         <label>Material<select name="material"><option>Couche fosco</option><option>Couche brilho</option><option>Linho</option><option>Papel reciclado</option></select></label>
         <label>Espessura<select name="weight"><option>300 g/m²</option><option>310 g/m²</option><option>330 g/m²</option><option>350 g/m²</option></select></label>
         <label>Imagem do verso<input name="backImage" type="file" accept="image/*"></label>
@@ -198,15 +200,15 @@
       <div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button">Salvar definições</button></div>
     </form>
   </dialog>
-  <script src="card-model.js?v=20261017-scale2"></script>
-  <script src="vendor/diary-markdown.js?v=20261017-scale2"></script>
-  <script src="diary-preview.js?v=20261017-scale2"></script>
-  <script src="app.js?v=20261017-scale2"></script>
-  <script src="card-editor.js?v=20261017-scale2"></script>
-  <script src="structured-ui.js?v=20261017-scale2"></script>
+  <script src="card-model.js?v=20261017-font1"></script>
+  <script src="vendor/diary-markdown.js?v=20261017-font1"></script>
+  <script src="diary-preview.js?v=20261017-font1"></script>
+  <script src="app.js?v=20261017-font1"></script>
+  <script src="card-editor.js?v=20261017-font1"></script>
+  <script src="structured-ui.js?v=20261017-font1"></script>
   <script src="vendor/card-pdf.js?v=20261017-pdf1"></script>
   <script src="pdf-layout.js?v=20261017-pdf1"></script>
-  <script src="project-pdf.js?v=20261017-pdf1"></script>
+  <script src="project-pdf.js?v=20261017-font1"></script>
 </body>
 </html>
 

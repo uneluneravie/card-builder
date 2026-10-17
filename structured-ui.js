@@ -74,6 +74,7 @@ new ResizeObserver(fitCardPreview).observe($('#tcgCardPreview').closest('.previe
 
 // Both the visible preview and background measurements use the same markup.
 function fillCardPreview(preview,deck,card,faceName) {
+  applyCardTypography(preview,deck);
   const face=faceName==='verso'?card.verso||{}:card;
   const image=face.imagem||(faceName==='verso'?deck.imagemVerso:'');
   preview.innerHTML=`<div class="tcg-frame structured-frame"><header>${escapeHtml(face.titulo||card.titulo)}${faceName==='verso'?' — Verso':''}</header>${image?`<div class="tcg-art" style="background-image:url('${escapeHtml(image)}')"></div>`:''}<div class="tcg-description">${CardEditor.content(card,faceName)}</div><footer><span>${escapeHtml(card.id||'')}</span><small>${escapeHtml(deck.nome)}</small></footer></div>`;
@@ -124,4 +125,17 @@ async function scheduleCardOverflowScan() {
       }
     }
   } finally {host.remove();}
+}
+
+function cardTypography(deck) {
+  const fonts=['Arial','Calibri','Times New Roman','Georgia','Verdana','Tahoma'];
+  const font=fonts.includes(deck.fonteTexto)?deck.fonteTexto:'Georgia';
+  const size=Number(deck.tamanhoFonteTexto);
+  return {font,size:Number.isFinite(size)&&size>=1&&size<=72?size:9};
+}
+function applyCardTypography(node,deck) {
+  const {font,size}=cardTypography(deck);
+  const fallback=['Georgia','Times New Roman'].includes(font)?'serif':'sans-serif';
+  node.style.setProperty('--card-text-font',`"${font}", ${fallback}`);
+  node.style.setProperty('--card-text-size',`${size}pt`);
 }

@@ -363,6 +363,9 @@ function openDeckDialog(index = null) {
     form.elements.customHeight.value = deck.tamanhoPersonalizado?.altura || '';
     setSelectValue(form.elements.material, deck.material);
     setSelectValue(form.elements.weight, deck.espessura);
+    const typography=cardTypography(deck);
+    form.elements.textFont.value=typography.font;
+    form.elements.textSize.value=typography.size;
   }
   updateCustomCardSizeFields();
   deckDialog.showModal();
@@ -651,6 +654,7 @@ $('#deckForm').addEventListener('submit', async (event) => {
     tipo: data.get('deckType').trim(),
     nome: data.get('name'), quantidade: Number(data.get('quantity')), tamanho: data.get('size'),
     material: data.get('material'), espessura: data.get('weight'),
+    fonteTexto: data.get('textFont'), tamanhoFonteTexto: Number(data.get('textSize')),
     tamanhoPersonalizado: data.get('size') === 'Personalizado'
       ? { largura: Number(data.get('customWidth')), altura: Number(data.get('customHeight')) }
       : null,

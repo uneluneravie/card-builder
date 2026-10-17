@@ -147,8 +147,23 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.locator('#deckForm [name=name]').fill('Teste de compatibilidade');
  await page.locator('#deckForm [name=quantity]').fill('1');
  await page.locator('#deckForm [name=deckType]').fill('Item');
+ await page.locator('#deckForm [name=textFont]').selectOption('Arial');
+ await page.locator('#deckForm [name=textSize]').fill('10');
  await page.locator('#saveDeck').click();await page.waitForTimeout(200);
  assert.equal(files.get(p+'projeto.json').baralhos.length,5);assert.equal(files.get(p+'projeto.json').definicoes.condicoes.length,3);
+ // Typography uses points and survives saving, reopening and both faces.
+ await page.locator('.deck-card').filter({hasText:'Teste de compatibilidade'}).click();
+ assert.equal(await page.locator('#deckForm [name=textFont]').inputValue(),'Arial');
+ assert.equal(await page.locator('#deckForm [name=textSize]').inputValue(),'10');
+ await page.locator('#openDeckPage').click();await page.locator('[data-card-index="0"]').click();
+ for(const face of ['#previewFront','#previewBack']) {
+  await page.locator(face).click();
+  const typography=await page.locator('#tcgCardPreview .tcg-description').evaluate(e=>({font:getComputedStyle(e).fontFamily,size:parseFloat(getComputedStyle(e).fontSize)}));
+  assert(typography.font.includes('Arial'));assert(Math.abs(typography.size-10*96/72)<.01);
+ }
+ assert.equal(files.get(p+'baralhos/teste-de-compatibilidade.json').fonteTexto,'Arial');
+ assert.equal(files.get(p+'baralhos/teste-de-compatibilidade.json').tamanhoFonteTexto,10);
+ await page.locator('#cardForm [data-close-dialog]').click();await page.locator('#backToProject').click();
  // Preview em três tamanhos, sem overflow horizontal da página/dialog.
  await page.locator('.deck-card').filter({hasText:'Situações'}).click();await page.locator('#openDeckPage').click();await page.locator('[data-card-index="8"]').click();
  // Frente pública: pré-requisitos, sem pagamento ou resultados.

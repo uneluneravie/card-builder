@@ -18,6 +18,7 @@ $('#downloadProjectPdf').addEventListener('click', async function() {
         button.textContent=`Gerando PDF… ${++done}/${items.length}`;
         const {card,deck,width,height}=item;
         const node=document.createElement('div');node.className='tcg-card';node.style.width=`${width*96/25.4}px`;node.style.height=`${height*96/25.4}px`;
+        applyCardTypography(node,deck);
         node.innerHTML=`<div class="tcg-frame structured-frame"><header>${escapeHtml(card.titulo||'Carta')}</header>${card.imagem?'<div class="tcg-art"></div>':''}<div class="tcg-description">${CardEditor.content(card,'frente')}</div><footer><span>${escapeHtml(card.id||'')}</span><small>${escapeHtml(deck.nome)}</small></footer></div>`;
         if(card.imagem)node.querySelector('.tcg-art').style.backgroundImage=`url(${JSON.stringify(card.imagem)})`;
         if(deck.imagemFrame)node.firstElementChild.style.backgroundImage=`url(${JSON.stringify(deck.imagemFrame)})`;
