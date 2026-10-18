@@ -4,7 +4,7 @@
   "version": "0.2.0",
   "scripts": {
     "test": "node tests/model.test.js && node tests/pdf-layout.test.js",
-    "test:browser": "node tests/browser.test.js",
+    "test:browser": "node tests/browser.test.js && node tests/tokens.browser.test.js",
     "build:diary": "esbuild tools/diary-vendor.mjs --bundle --minify --format=iife --outfile=vendor/diary-markdown.js",
     "build:pdf": "esbuild tools/pdf-vendor.mjs --bundle --minify --format=iife --outfile=vendor/card-pdf.js"
   },

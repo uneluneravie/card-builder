@@ -23,8 +23,9 @@ $('#downloadProjectPdf').addEventListener('click', async function() {
         if(card.imagem)node.querySelector('.tcg-art').style.backgroundImage=`url(${JSON.stringify(card.imagem)})`;
         if(deck.imagemFrame)node.firstElementChild.style.backgroundImage=`url(${JSON.stringify(deck.imagemFrame)})`;
         host.replaceChildren(node);
+        if(isTokenDeck(deck)) { node.className='pdf-token'; node.replaceChildren(createTokenVisual(deck,card)); }
         const text=node.querySelector('.tcg-description');
-        if(text.scrollHeight>text.clientHeight+2)throw Error(`O conteúdo de “${card.titulo}” excede o tamanho da carta. Revise o texto antes de exportar.`);
+        if(text && text.scrollHeight>text.clientHeight+2)throw Error(`O conteúdo de “${card.titulo}” excede o tamanho da carta. Revise o texto antes de exportar.`);
         const canvas=await toCanvas(node,{pixelRatio:300/96,cacheBust:false,preferredFontFormat:'woff2'});
         let image=canvas;
         if(item.rotated){image=document.createElement('canvas');image.width=canvas.height;image.height=canvas.width;const ctx=image.getContext('2d');ctx.translate(image.width,0);ctx.rotate(Math.PI/2);ctx.drawImage(canvas,0,0);}
@@ -38,6 +39,6 @@ $('#downloadProjectPdf').addEventListener('click', async function() {
   } catch(error) {
     showToast('Não foi possível gerar o PDF',error.message);
   } finally {
-    host.remove();button.disabled=false;button.textContent='Baixar PDF dos baralhos';
+    host.remove();button.disabled=false;button.textContent='Baixar PDF dos componentes';
   }
 });

@@ -32,6 +32,12 @@
     for(const deck of decks) {
       if(deck.versaoFormato>=2 && (!deck.id||sets.baralhos.has(deck.id)))err(deck.nome,'ID de baralho ausente ou duplicado');
       if(deck.id)sets.baralhos.add(deck.id);
+      if(deck.componente==='tokens') {
+        const t=deck.token||{};
+        if(!['redondo','quadrado','retangular','hexagonal'].includes(t.formato))err(deck.nome,'formato de token inválido');
+        if(!Number.isFinite(t.larguraCm)||t.larguraCm<0.1||t.larguraCm>100||t.formato==='retangular'&&(!Number.isFinite(t.alturaCm)||t.alturaCm<0.1||t.alturaCm>100))err(deck.nome,'dimensões de token inválidas');
+        if(typeof t.margem!=='boolean'||!/^#[0-9a-f]{6}$/i.test(t.corMargem||''))err(deck.nome,'margem de token inválida');
+      }
       if(!Number.isInteger(deck.quantidade)||deck.quantidade<1)err(deck.nome,'quantidade deve ser inteira e positiva');
       if(deck.versaoFormato>=2 && deck.quantidade !== deck.cartas?.length)err(deck.nome,'quantidade difere do número de cartas');
       for(const card of deck.cartas||[]) {

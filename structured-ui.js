@@ -111,6 +111,7 @@ async function scheduleCardOverflowScan() {
   try {
     for(const deck of decks) {
       const results=[];cardOverflowResults.set(deck,results);
+      if(isTokenDeck(deck)){deckCards(deck).forEach(()=>results.push([]));continue;}
       setPhysicalCardSize(preview,deck);
       const cards=deckCards(deck);
       for(let i=0;i<cards.length;i++) {

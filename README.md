@@ -70,6 +70,14 @@ Markdown e SVG são sanitizados, e diagramas inválidos mostram uma mensagem com
 
 ### PDF para impressão
 
-Na página principal de um projeto, **Baixar PDF dos baralhos** exporta as frentes de todas as cartas, inclusive espaços ainda sem conteúdo. O arquivo usa A4, margem de 10 mm e espaçamento zero, preservando as dimensões de cada baralho. A distribuição MaxRects compara três ordenações em retrato e paisagem e permite rotação; busca reduzir páginas sem garantir o ótimo matemático global. Imprima em **Tamanho real / 100%**, desativando o ajuste à página.
+Na página principal de um projeto, **Baixar PDF dos componentes** exporta as frentes de todas as cartas e os tokens, inclusive espaços ainda sem conteúdo. O arquivo usa A4, margem de 10 mm e espaçamento zero, preservando as dimensões de cada baralho. A distribuição MaxRects compara três ordenações em retrato e paisagem e permite rotação; busca reduzir páginas sem garantir o ótimo matemático global. Imprima em **Tamanho real / 100%**, desativando o ajuste à página.
 
 As cartas são rasterizadas a 300 dpi com a composição do preview. Texto que excede a carta ou dimensões incompatíveis com A4 interrompem a exportação com aviso. Imagens externas precisam permitir CORS. O PDF contém somente frentes; não faz imposição de versos para impressão duplex. Execute `npm run build:pdf` ao atualizar as bibliotecas da exportação.
+
+### Tokens
+
+Use **Novos tokens** para criar um conjunto com nome, quantidade e material, seguindo o fluxo dos baralhos. O padrão é redondo, com diâmetro inicial de 3 cm editável; também há formatos quadrado, retangular e hexagonal. As medidas em centímetros incluem a margem. O toggle **Usar margem** acrescenta uma faixa de 5% com cor escolhida para todo o conjunto.
+
+Abra o conjunto e selecione cada token para adicionar ou substituir sua imagem. O recorte preenche o formato, centralizando a imagem; tokens não exibem título nem texto. A ordem, o salvamento local, a sincronização com GitHub e a exportação A4 em escala real seguem o mesmo fluxo das cartas.
+
+Os conjuntos usam `componente: "tokens"` e `token: { formato, larguraCm, alturaCm, margem, corMargem }`. Para manter compatibilidade com projetos existentes, continuam listados em `baralhos` e armazenam suas imagens nos itens de `cartas`; cada item contém ID e imagem.

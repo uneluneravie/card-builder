@@ -229,7 +229,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
    assert(Math.abs(metrics.width-70*96/25.4)<1);
    assert(Math.abs(metrics.height-120*96/25.4)<1);
    assert(Math.abs(metrics.shown-Math.min(metrics.available,70*96/25.4))<1);
-   assert.equal(metrics.font,'12px');
+   assert(Math.abs(parseFloat(metrics.font)-(files.get(p+'baralhos/ambrosio-situacoes.json').tamanhoFonteTexto||9)*96/72)<.01);
    const titleInput=await page.locator('#cardForm [name=title]').boundingBox();
    assert(titleInput.x>=0&&titleInput.x+titleInput.width<=width);
   }

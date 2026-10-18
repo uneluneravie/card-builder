@@ -61,3 +61,18 @@
 .card-order-actions button,.card-modal-closebar button{min-width:44px;min-height:44px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink);cursor:pointer;font-size:20px}
 .card-order-actions button:disabled{opacity:.4;cursor:default}
 .card-modal-closebar{display:flex;justify-content:flex-end;position:sticky;top:0;z-index:2;padding:8px 16px;background:var(--surface)}
+
+/* Tokens: o mesmo recorte é usado no inventário, editor e PDF. */
+.token-visual { position:relative; width:100%; overflow:hidden; }
+.token-image { position:absolute; background-color:#eadfcd; background-size:cover; background-position:center; }
+.token-redondo, .token-redondo .token-image { border-radius:50%; }
+.token-hexagonal, .token-hexagonal .token-image { clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%); }
+.token-editor-preview { width:min(100%,280px); margin:24px auto; }
+.token-collection-art { padding:16px; display:grid; place-items:center; }
+.token-collection-art .token-visual { max-width:100%; height:auto; }
+.token-deck-preview { display:flex; align-items:center; justify-content:center; gap:16px; background:#e5dcc8; color:#625735; }
+.token-deck-preview > span { font-size:76px; }
+.token-toggle { display:flex; align-items:center; gap:10px; }
+.token-toggle input { width:24px; height:24px; min-height:24px; }
+#tokenSettings input[type=color] { width:100%; height:44px; }
+.pdf-token > .token-visual { width:100%; height:100%; }

@@ -45,3 +45,8 @@ vm.createContext(sandbox);vm.runInContext(code+';globalThis.Editor=CardEditor;',
 const front=sandbox.Editor.content(local.cartas[0],'frente'),back=sandbox.Editor.content(local.cartas[0],'verso');
 assert(front.includes('Requer:'));assert(!front.includes('Resolver:'));assert(!front.includes('Pagamento:'));assert(back.includes('Resolver:'));assert(back.includes('Pagamento:'));
 console.log('Separação frente/verso e pré-requisitos públicos validados.');
+
+// Tokens: medidas físicas e margem são validadas antes de salvar/sincronizar.
+const tokens={versaoFormato:2,componente:'tokens',id:'moedas',nome:'Moedas',quantidade:1,cartas:[{id:'moeda-1',imagem:''}],token:{formato:'redondo',larguraCm:3,alturaCm:3,margem:false,corMargem:'#e8d9bc'}};
+assert.deepEqual(M.validate({},[tokens]),[]);
+for(const token of [{...tokens.token,larguraCm:0},{...tokens.token,formato:'retangular',alturaCm:-1},{...tokens.token,formato:'triangulo'},{...tokens.token,corMargem:'red'}]) assert(M.validate({},[{...tokens,token}]).length>0);

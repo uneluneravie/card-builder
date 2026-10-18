@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20261018-card-order1">
+  <link rel="stylesheet" href="styles.css?v=20261018-tokens1">
 </head>
 <body>
   <div class="app-shell">
@@ -31,7 +31,7 @@
 
       <nav class="main-nav" aria-label="Navegação principal">
         <a href="#visao" class="active" data-view="visao"><span>⌂</span> Visão geral</a>
-        <a href="#baralhos" data-view="baralhos"><span>▱</span> Baralhos <b id="navDeckCount">0</b></a>
+        <a href="#baralhos" data-view="baralhos"><span>▱</span> Conjuntos <b id="navDeckCount">0</b></a>
         <a href="#diario" data-view="diario"><span>▤</span> Diário <b id="navDiaryCount">0</b></a>
       </nav>
 
@@ -47,7 +47,7 @@
     <main class="main-content">
       <header class="topbar">
         <button class="icon-button menu-button" id="menuButton" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false">☰</button>
-        <label class="global-search"><span>⌕</span><input id="globalSearch" type="search" placeholder="Buscar cartas, baralhos ou notas..." aria-label="Buscar"></label>
+        <label class="global-search"><span>⌕</span><input id="globalSearch" type="search" placeholder="Buscar cartas, tokens ou notas..." aria-label="Buscar"></label>
       </header>
 
       <div class="page" id="visao">
@@ -64,7 +64,7 @@
         <div id="projectPage" hidden>
         <section class="welcome">
           <div><button class="back-button" id="backToProjects">← Todos os projetos</button><h1 id="projectPageTitle">Projeto</h1><p id="projectWelcome">Continue dando vida ao seu universo.</p></div>
-          <div class="project-actions"><button type="button" class="secondary-button" id="downloadProjectPdf">Baixar PDF dos baralhos</button><button class="primary-button" id="newDeckButton"><span>＋</span> Novo baralho</button></div>
+          <div class="project-actions"><button type="button" class="secondary-button" id="downloadProjectPdf">Baixar PDF dos componentes</button><button class="secondary-button" id="newTokenButton">＋ Novos tokens</button><button class="primary-button" id="newDeckButton"><span>＋</span> Novo baralho</button></div>
         </section>
 
         <section class="project-hero">
@@ -73,15 +73,15 @@
             <div class="hero-title"><div><p class="eyebrow">PROJETO ATUAL</p><h2 id="heroProjectName"></h2></div></div>
             <p id="heroProjectDescription"></p>
             <div class="hero-stats">
-              <div><span class="stat-icon purple">▱</span><p><strong id="deckCount">0</strong><small>Baralhos</small></p></div>
-              <div><span class="stat-icon orange">♢</span><p><strong id="cardCount">0</strong><small>Cartas</small></p></div>
+              <div><span class="stat-icon purple">▱</span><p><strong id="deckCount">0</strong><small>Conjuntos</small></p></div>
+              <div><span class="stat-icon orange">♢</span><p><strong id="cardCount">0</strong><small>Cartas e tokens</small></p></div>
               <div><span class="stat-icon green">▤</span><p><strong id="diaryCount">0</strong><small>Páginas no diário</small></p></div>
             </div>
           </div>
         </section>
 
         <section class="section-block decks-section" id="baralhos">
-          <div class="section-heading"><div><h2>Seus baralhos</h2><p>Organize cada conjunto do projeto.</p></div></div>
+          <div class="section-heading"><div><h2>Seus baralhos e tokens</h2><p>Organize cada conjunto do projeto.</p></div></div>
           <button type="button" class="secondary-button" id="editDefinitions">Condições e recursos do projeto</button>
           <div class="deck-grid" id="deckGrid"></div>
         </section>
@@ -116,21 +116,30 @@
       <div class="dialog-head"><div><p class="eyebrow">INVENTÁRIO</p><h2 id="deckDialogTitle">Criar baralho</h2></div><button type="button" data-close-dialog aria-label="Fechar">×</button></div>
       <p class="dialog-intro" id="deckDialogIntro">Comece pelos dados de produção. Você poderá adicionar e compor as cartas em seguida.</p>
       <div class="form-grid">
-        <label class="full">Nome do baralho<input name="name" required placeholder="Ex.: Criaturas da Névoa"></label>
-        <label>Tipo do baralho<input name="deckType" placeholder="Ex.: Situação, Item, Personagem"></label>
-        <label>Quantidade de cartas<input name="quantity" type="number" min="1" value="54" required></label>
-        <label>Tamanho<select name="size"><option>Padrão (63 × 88 mm)</option><option>Mini Chimera (43 × 65 mm)</option><option>57 × 89 mm (bridge)</option><option>70 × 120 mm (tarô)</option><option>Personalizado</option></select></label>
+        <label class="full">Nome do conjunto<input name="name" required placeholder="Ex.: Criaturas da Névoa"></label>
+        <label data-card-setting>Tipo do baralho<input name="deckType" placeholder="Ex.: Situação, Item, Personagem"></label>
+        <label><span id="quantityLabel">Quantidade de cartas</span><input name="quantity" type="number" min="1" value="54" required></label>
+        <label data-card-setting>Tamanho<select name="size"><option>Padrão (63 × 88 mm)</option><option>Mini Chimera (43 × 65 mm)</option><option>57 × 89 mm (bridge)</option><option>70 × 120 mm (tarô)</option><option>Personalizado</option></select></label>
+        <fieldset id="tokenSettings" class="custom-card-size full" hidden>
+          <legend>Formato dos tokens</legend>
+          <label>Formato<select name="tokenShape"><option value="redondo">Redondo</option><option value="quadrado">Quadrado</option><option value="retangular">Retangular</option><option value="hexagonal">Hexagonal</option></select></label>
+          <label><span id="tokenWidthLabel">Diâmetro (cm)</span><input name="tokenWidth" type="number" min="0.1" max="100" step="0.1" value="3"></label>
+          <label id="tokenHeightField" hidden>Altura (cm)<input name="tokenHeight" type="number" min="0.1" max="100" step="0.1" value="3"></label>
+          <label class="token-toggle"><input name="tokenMargin" type="checkbox"> Usar margem</label>
+          <label>Cor da margem<input name="tokenMarginColor" type="color" value="#e8d9bc"></label>
+          <small class="full">A imagem ocupa o formato inteiro. Com margem, uma faixa de 5% envolve a imagem. Medidas incluem a margem.</small>
+        </fieldset>
         <fieldset id="customCardSize" class="custom-card-size full" hidden>
           <legend>Dimensões personalizadas</legend>
           <label>Largura (mm)<input name="customWidth" type="number" min="1" max="1000" step="0.1" inputmode="decimal"></label>
           <label>Altura (mm)<input name="customHeight" type="number" min="1" max="1000" step="0.1" inputmode="decimal"></label>
         </fieldset>
-        <label>Fonte dos textos<select name="textFont"><option>Arial</option><option>Calibri</option><option>Times New Roman</option><option selected>Georgia</option><option>Verdana</option><option>Tahoma</option></select></label>
-        <label>Tamanho dos textos (pt)<input name="textSize" type="number" min="1" max="72" step="0.5" value="9" required><small>Em pontos, como no Word e Google Docs. Ex.: Arial, 10 pt.</small></label>
+        <label data-card-setting>Fonte dos textos<select name="textFont"><option>Arial</option><option>Calibri</option><option>Times New Roman</option><option selected>Georgia</option><option>Verdana</option><option>Tahoma</option></select></label>
+        <label data-card-setting>Tamanho dos textos (pt)<input name="textSize" type="number" min="1" max="72" step="0.5" value="9" required><small>Em pontos, como no Word e Google Docs. Ex.: Arial, 10 pt.</small></label>
         <label>Material<select name="material"><option>Couche fosco</option><option>Couche brilho</option><option>Linho</option><option>Papel reciclado</option></select></label>
         <label>Espessura<select name="weight"><option>300 g/m²</option><option>310 g/m²</option><option>330 g/m²</option><option>350 g/m²</option></select></label>
-        <label>Imagem do verso<input name="backImage" type="file" accept="image/*"></label>
-        <label>Imagem do frame<input name="frameImage" type="file" accept="image/*"></label>
+        <label data-card-setting>Imagem do verso<input name="backImage" type="file" accept="image/*"></label>
+        <label data-card-setting>Imagem do frame<input name="frameImage" type="file" accept="image/*"></label>
       </div>
       <div class="dialog-actions"><button type="button" id="openDeckPage" class="secondary-button" hidden>Ver cartas do baralho</button><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button" id="saveDeck">Criar baralho</button></div>
     </form>
@@ -149,6 +158,15 @@
         <div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button">Salvar edição</button></div>
       </form>
     </div>
+  </dialog>
+
+  <dialog id="tokenDialog" class="dialog compact">
+    <form id="tokenForm">
+      <div class="dialog-head"><h2 id="tokenDialogTitle">Editar token</h2><button type="button" data-close-dialog aria-label="Fechar edição sem salvar">×</button></div>
+      <div id="tokenPreview" class="token-editor-preview"></div>
+      <label>Imagem do token<input name="image" type="file" accept="image/*"><small id="tokenImageHint"></small></label>
+      <div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button">Salvar token</button></div>
+    </form>
   </dialog>
 
   <dialog id="projectDialog" class="dialog compact">
@@ -201,15 +219,16 @@
       <div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button">Salvar definições</button></div>
     </form>
   </dialog>
-  <script src="card-model.js?v=20261018-card-order1"></script>
-  <script src="vendor/diary-markdown.js?v=20261018-card-order1"></script>
-  <script src="diary-preview.js?v=20261018-card-order1"></script>
-  <script src="app.js?v=20261018-card-order1"></script>
-  <script src="card-editor.js?v=20261018-card-order1"></script>
-  <script src="structured-ui.js?v=20261018-card-order1"></script>
+  <script src="card-model.js?v=20261018-tokens1"></script>
+  <script src="vendor/diary-markdown.js?v=20261018-tokens1"></script>
+  <script src="diary-preview.js?v=20261018-tokens1"></script>
+  <script src="tokens.js?v=20261018-tokens1"></script>
+  <script src="app.js?v=20261018-tokens1"></script>
+  <script src="card-editor.js?v=20261018-tokens1"></script>
+  <script src="structured-ui.js?v=20261018-tokens1"></script>
   <script src="vendor/card-pdf.js?v=20261017-pdf1"></script>
   <script src="pdf-layout.js?v=20261017-pdf1"></script>
-  <script src="project-pdf.js?v=20261018-card-order1"></script>
+  <script src="project-pdf.js?v=20261018-tokens1"></script>
 </body>
 </html>
 

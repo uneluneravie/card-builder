@@ -320,6 +320,7 @@ function renderDecks(decks) {
     const progress = Math.round((deck.cartasProntas / deck.quantidade) * 100);
     const theme = ['heroes', 'relics', 'lands'][index % 3];
     const progressClass = index % 3 === 1 ? 'amber' : index % 3 === 2 ? 'teal' : '';
+    if (isTokenDeck(deck)) return tokenCollectionCard(deck,index);
     return `<article class="deck-card" data-name="${escapeHtml(deck.nome)}" data-deck-index="${index}" tabindex="0" role="button" aria-label="Editar baralho ${escapeHtml(deck.nome)}">
       <div class="deck-preview ${theme}"><span class="card-back back-one">${escapeHtml(deck.simbolo || '✦')}</span><span class="card-back back-two">${escapeHtml(deck.simbolo || '◆')}</span></div>
       <div class="deck-body"><div class="deck-title"><h3>${escapeHtml(deck.nome)}</h3></div><p>${escapeHtml(deck.descricao)}</p><div class="progress-label"><span>${deck.cartasProntas} de ${deck.quantidade} cartas</span><strong>${progress}%</strong></div><div class="progress ${progressClass}"><span style="width:${progress}%"></span></div><div class="deck-meta"><span>◫ ${escapeHtml(deckSizeLabel(deck))}</span><span>◉ ${escapeHtml(deck.espessura)}</span></div></div>
@@ -336,15 +337,18 @@ function renderDecks(decks) {
       }
     });
   });
+  $('#deckGrid').insertAdjacentHTML('beforeend', '<button type="button" class="add-deck-card" id="addTokenCard"><span>＋</span><strong>Criar conjunto de tokens</strong><small>Imagem, formato e margem opcional.</small></button>');
+  $('#addTokenCard').addEventListener('click', () => openDeckDialog(null, 'tokens'));
   $('#addDeckCard').addEventListener('click', () => openDeckDialog());
 }
 
 function deckSizeLabel(deck) {
+  if (isTokenDeck(deck)) return tokenSizeLabel(deck);
   if (deck.tamanho !== 'Personalizado' || !deck.tamanhoPersonalizado) return deck.tamanho;
   return `${deck.tamanhoPersonalizado.largura} × ${deck.tamanhoPersonalizado.altura} mm`;
 }
 
-function openDeckDialog(index = null) {
+function openDeckDialog(index = null, component = 'baralho') {
   editingDeckIndex = index;
   const form = $('#deckForm');
   form.reset();
@@ -367,19 +371,21 @@ function openDeckDialog(index = null) {
     form.elements.textFont.value=typography.font;
     form.elements.textSize.value=typography.size;
   }
+  configureTokenFields(isEditing ? activeDecks[index] : {componente:component});
   updateCustomCardSizeFields();
   deckDialog.showModal();
 }
 
 function deckCards(deck) {
   return Array.from({ length: deck.quantidade }, (_, index) => deck.cartas?.[index] || {
-    titulo: `Carta ${index + 1}`,
-    descricao: 'Esta carta ainda não possui conteúdo.',
+    ...(isTokenDeck(deck) ? {} : {titulo: `Carta ${index + 1}`,
+    descricao: 'Esta carta ainda não possui conteúdo.'}),
     imagem: ''
   });
 }
 
 function cardDimensions(deck) {
+  if (isTokenDeck(deck)) return tokenDimensions(deck);
   if (deck.tamanho === 'Personalizado' && deck.tamanhoPersonalizado) {
     const width = Number(deck.tamanhoPersonalizado.largura);
     const height = Number(deck.tamanhoPersonalizado.altura);
@@ -395,7 +401,7 @@ function cardDimensions(deck) {
 
 function updateCustomCardSizeFields() {
   const form = $('#deckForm');
-  const isCustom = form.elements.size.value === 'Personalizado';
+  const isCustom = form.dataset.component !== 'tokens' && form.elements.size.value === 'Personalizado';
   $('#customCardSize').hidden = !isCustom;
   form.elements.customWidth.required = isCustom;
   form.elements.customHeight.required = isCustom;
@@ -409,7 +415,8 @@ function openDeckPage(index) {
   $('#projectPage').hidden = true;
   $('#deckPage').hidden = false;
   $('#deckPageTitle').textContent = deck.nome;
-  $('#deckPageDescription').textContent = deck.descricao || 'Todas as cartas deste baralho.';
+  $('#deckPageDescription').textContent = deck.descricao || (isTokenDeck(deck) ? 'Todos os tokens deste conjunto. Selecione um token para adicionar sua imagem.' : 'Todas as cartas deste baralho.');
+  $('#deckPage .eyebrow').textContent = isTokenDeck(deck) ? 'TOKENS' : 'BARALHO';
   $('#deckPageCount').textContent = `${deck.quantidade} ${deck.quantidade === 1 ? 'carta' : 'cartas'}`;
   $('#cardsGrid').innerHTML = deckCards(deck).map((card, cardIndex) => `
     <div class="collection-card-item"><button type="button" class="collection-card" data-card-index="${cardIndex}">
@@ -424,6 +431,7 @@ function openDeckPage(index) {
     openCardPreview(deck, deckCards(deck)[cardIndex], cardIndex);
   }));
   $$('[data-move-card]').forEach(button=>button.addEventListener('click',()=>moveDeckCard(Number(button.dataset.moveCard),Number(button.dataset.direction))));
+  if (isTokenDeck(deck)) renderTokenCollection(deck);
   updateCardOverflowBadges();
   scheduleCardOverflowScan();
   history.replaceState(null, '', `#projeto/${activeProject.path}/baralhos/${index + 1}`);
@@ -452,10 +460,11 @@ function moveDeckCard(index,direction) {
   window.scrollTo({top:scrollY,behavior:'instant'});
   const directionButton=$(`[data-move-card="${destination}"][data-direction="${direction}"]`);
   (directionButton?.disabled?$(`[data-card-index="${destination}"]`):directionButton)?.focus({preventScroll:true});
-  showToast('Ordem atualizada',`${cards[destination].titulo} agora é a carta ${destination+1}.`);
+  showToast('Ordem atualizada',isTokenDeck(deck) ? `Token movido para a posição ${destination+1}.` : `${cards[destination].titulo} agora é a carta ${destination+1}.`);
 }
 
 function openCardPreview(deck, card, cardIndex) {
+  if (isTokenDeck(deck)) { openTokenEditor(deck, cardIndex); return; }
   editingCardIndex = cardIndex;
   const title = card.titulo || 'Carta sem título';
   const form = $('#cardForm');
@@ -487,6 +496,7 @@ function deckGithubPath(index) {
 }
 
 function setSelectValue(select, value) {
+  if (value == null) return;
   if (![...select.options].some((option) => option.value === value)) select.add(new Option(value, value));
   select.value = value;
 }
@@ -680,7 +690,7 @@ $('#deckForm').addEventListener('submit', async (event) => {
   const isCreating = editingDeckIndex === null;
   const deck = {
     ...(isCreating ? { versaoFormato: 2, cartasProntas: 0, descricao: '', simbolo: '✦', cartas: [] } : activeDecks[editingDeckIndex]),
-    tipo: data.get('deckType').trim(),
+    tipo: (data.get('deckType') || '').trim(),
     nome: data.get('name'), quantidade: Number(data.get('quantity')), tamanho: data.get('size'),
     material: data.get('material'), espessura: data.get('weight'),
     fonteTexto: data.get('textFont'), tamanhoFonteTexto: Number(data.get('textSize')),
@@ -690,11 +700,15 @@ $('#deckForm').addEventListener('submit', async (event) => {
     imagemVerso: backImage?.size ? await fileToDataUrl(backImage) : (isCreating ? '' : activeDecks[editingDeckIndex].imagemVerso || ''),
     imagemFrame: frameImage?.size ? await fileToDataUrl(frameImage) : (isCreating ? '' : activeDecks[editingDeckIndex].imagemFrame || '')
   };
+  if (form.dataset.component === 'tokens') {
+    Object.assign(deck, tokenSettingsFromForm(form));
+    for(const key of ['tipo','tamanho','tamanhoPersonalizado','fonteTexto','tamanhoFonteTexto','imagemVerso','imagemFrame','simbolo']) delete deck[key];
+  }
   if (!isCreating && deck.quantidade < (deck.cartas || []).length) {
     showToast('Quantidade preservada', 'Remover cartas pelo campo quantidade apagaria conteúdo e referências. Mantenha ao menos o número atual de cartas.');
     return;
   }
-  if (!deck.id) deck.id = `baralho-${crypto.randomUUID()}`;
+  if (!deck.id) deck.id = `${isTokenDeck(deck)?'tokens':'baralho'}-${crypto.randomUUID()}`;
   if (deck.versaoFormato >= 2) deck.cartas = deckCards(deck).map((card, i) => ({...card, id: card.id || `${deck.id}-c${i+1}`}));
   const prospective = [...activeDecks];
   if (isCreating) prospective.push(deck); else prospective[editingDeckIndex] = deck;
@@ -737,7 +751,7 @@ $('#deckForm').addEventListener('submit', async (event) => {
   $('#cardCount').textContent = activeDecks.reduce((total, item) => total + item.quantidade, 0);
   $('#navDeckCount').textContent = activeDecks.length;
   deckDialog.close();
-  showToast(isCreating ? 'Baralho criado' : 'Baralho atualizado', `${data.get('name')} foi salvo localmente.`);
+  showToast(isTokenDeck(deck) ? (isCreating ? 'Tokens criados' : 'Tokens atualizados') : (isCreating ? 'Baralho criado' : 'Baralho atualizado'), `${data.get('name')} foi salvo localmente.`);
   form.reset();
   editingDeckIndex = null;
 });
