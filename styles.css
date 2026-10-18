@@ -51,3 +51,6 @@
 .structured-frame header,.structured-frame .tcg-description{font-family:var(--card-text-font,Georgia,serif);font-size:var(--card-text-size,9pt)}
 .structured-frame .tcg-description h3{font-size:1em}
 .structured-frame .tcg-description .resolution-code{font-size:.833333em}
+
+.tcg-description>section:first-child{border-top:0;padding-top:0}
+.tcg-description>section:first-child>h3:first-child{margin-top:0}

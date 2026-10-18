@@ -87,7 +87,7 @@ const CardEditor = (() => {
   }
   function content(card,face){
     const c=face==='verso'?card.verso||{}:card;
-    let html=`<p>${esc(c.descricao||'Sem descrição.')}</p>`;
+    let html=face==='verso'&&!c.descricao?.trim()?'':`<p>${esc(c.descricao||'Sem descrição.')}</p>`;
     for(const s of c.secoes||[])html+=`<h3>${esc(s.titulo)}</h3><p>${esc(s.texto)}</p>`;
     for(const r of c.resolucoes||[])html+=`<section class="resolution"><h3>${esc(r.titulo||r.id)} <small class="resolution-code">${esc(r.id)}</small></h3>${r.texto?`<p>${esc(r.texto)}</p>`:''}${r.custos?.length?`<p><b>Pagamento:</b> ${esc(r.custos.map(describe).join('; '))}</p>`:''}<p><b>Resolver:</b> ${esc((r.efeitos||[]).map(describe).join('; '))}</p></section>`;
     if(face!=='verso'){

@@ -30,6 +30,21 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.locator('[data-project-path]').click();
  await page.waitForSelector('.deck-card');assert.equal(await page.locator('.deck-card').count(),4);
  assert.equal(await page.locator('#cardCount').textContent(),'28');
+ // An absent back description must not produce a placeholder or leading divider.
+ const backDescriptions=await page.evaluate(()=>{
+  const node=document.createElement('div');node.className='tcg-description';document.body.append(node);
+  const results=[undefined,'','   ','Descrição presente.'].map(description=>{
+   const verso={resolucoes:[{id:'R1',titulo:'Resolução',efeitos:[]},{id:'R2',titulo:'Outra resolução',efeitos:[]}]};
+   if(description!==undefined)verso.descricao=description;
+   node.innerHTML=CardEditor.content({verso},'verso');
+   return {placeholder:node.textContent.includes('Sem descrição'),first:node.firstElementChild.tagName,
+    border:getComputedStyle(node.querySelector('section')).borderTopWidth,
+    nextBorder:getComputedStyle(node.querySelectorAll('section')[1]).borderTopWidth};
+  });node.remove();return results;
+ });
+ for(const result of backDescriptions.slice(0,3))assert.deepEqual(result,{placeholder:false,first:'SECTION',border:'0px',nextBorder:'1px'});
+ assert.deepEqual(backDescriptions[3],{placeholder:false,first:'P',border:'1px',nextBorder:'1px'});
+
  assert.equal(await page.locator('.hero-title button').count(),0);
  await page.waitForFunction(()=>activeDecks.every(d=>cardOverflowResults.get(d)?.length===deckCards(d).length));
  // Measurement runs before opening any card; both faces and edits are checked.
