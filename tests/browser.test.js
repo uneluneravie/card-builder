@@ -160,6 +160,8 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   await page.locator(face).click();
   const typography=await page.locator('#tcgCardPreview .tcg-description').evaluate(e=>({font:getComputedStyle(e).fontFamily,size:parseFloat(getComputedStyle(e).fontSize)}));
   assert(typography.font.includes('Arial'));assert(Math.abs(typography.size-10*96/72)<.01);
+  const titleTypography=await page.locator('#tcgCardPreview header').evaluate(e=>({font:getComputedStyle(e).fontFamily,size:parseFloat(getComputedStyle(e).fontSize)}));
+  assert.deepEqual(titleTypography,typography);
  }
  assert.equal(files.get(p+'baralhos/teste-de-compatibilidade.json').fonteTexto,'Arial');
  assert.equal(files.get(p+'baralhos/teste-de-compatibilidade.json').tamanhoFonteTexto,10);
@@ -194,7 +196,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
    assert(Math.abs(metrics.width-70*96/25.4)<1);
    assert(Math.abs(metrics.height-120*96/25.4)<1);
    assert(Math.abs(metrics.shown-Math.min(metrics.available,70*96/25.4))<1);
-   assert.equal(metrics.font,'14px');
+   assert.equal(metrics.font,'12px');
    const titleInput=await page.locator('#cardForm [name=title]').boundingBox();
    assert(titleInput.x>=0&&titleInput.x+titleInput.width<=width);
   }
