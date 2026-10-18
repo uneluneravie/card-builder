@@ -136,6 +136,24 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  // Un candidato: somente o verso contém o segredo.
  await page.locator('.deck-card').filter({hasText:files.get(p+'baralhos/ambrosio-candidatos.json').nome}).click();
  await page.locator('#openDeckPage').click();
+ // Reordering changes positions, preserves IDs and all card data, and syncs.
+ const candidatePath=p+'baralhos/ambrosio-candidatos.json';
+ const originalCandidates=JSON.parse(JSON.stringify(files.get(candidatePath).cartas));
+ assert(await page.locator('[data-move-card="0"][data-direction="-1"]').isDisabled());
+ assert(await page.locator('[data-move-card="2"][data-direction="1"]').isDisabled());
+ await page.locator('[data-move-card="1"][data-direction="-1"]').click();
+ assert.equal(await page.locator('[data-card-index="0"] strong').textContent(),originalCandidates[1].titulo);
+ assert.equal(await page.locator('#cardPreviewDialog').evaluate(d=>d.open),false);
+ await page.waitForTimeout(300);
+ assert.deepEqual(files.get(candidatePath).cartas,[originalCandidates[1],originalCandidates[0],originalCandidates[2]]);
+ await page.locator('[data-card-index="0"]').click();
+ await page.locator('#cardForm [name=title]').fill('Rascunho descartado');
+ await page.getByRole('button',{name:'Fechar edição sem salvar',exact:true}).click();
+ await page.locator('[data-card-index="0"]').click();
+ assert.equal(await page.locator('#cardForm [name=title]').inputValue(),originalCandidates[1].titulo);
+ await page.getByRole('button',{name:'Fechar edição sem salvar',exact:true}).click();
+ await page.locator('[data-move-card="0"][data-direction="1"]').click();
+ await page.waitForTimeout(300);assert.deepEqual(files.get(candidatePath).cartas,originalCandidates);
  await page.locator('[data-card-index="1"]').click();
  assert(!(await page.locator('#tcgCardPreview').textContent()).includes('É o príncipe verdadeiro'));
  await page.locator('#previewBack').click();assert((await page.locator('#tcgCardPreview').textContent()).includes('É o príncipe verdadeiro'));

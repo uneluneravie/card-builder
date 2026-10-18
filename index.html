@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20261018-back-description1">
+  <link rel="stylesheet" href="styles.css?v=20261018-card-order1">
 </head>
 <body>
   <div class="app-shell">
@@ -137,6 +137,7 @@
   </dialog>
 
   <dialog id="cardPreviewDialog" class="dialog card-preview-dialog">
+    <div class="card-modal-closebar"><button type="button" data-close-dialog aria-label="Fechar edição sem salvar">×</button></div>
     <div class="card-preview-layout">
       <div class="preview-panel"><div class="face-switch"><button type="button" id="previewFront" class="secondary-button" aria-pressed="true">Frente</button><button type="button" id="previewBack" class="secondary-button" aria-pressed="false">Verso</button></div><div class="preview-viewport"><div class="preview-scale"><div id="tcgCardPreview" class="tcg-card"></div></div></div><p id="cardOverflowWarning" role="status"></p></div>
       <form id="cardForm" class="card-edit-form">
@@ -200,15 +201,15 @@
       <div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button">Salvar definições</button></div>
     </form>
   </dialog>
-  <script src="card-model.js?v=20261018-back-description1"></script>
-  <script src="vendor/diary-markdown.js?v=20261018-back-description1"></script>
-  <script src="diary-preview.js?v=20261018-back-description1"></script>
-  <script src="app.js?v=20261018-back-description1"></script>
-  <script src="card-editor.js?v=20261018-back-description1"></script>
-  <script src="structured-ui.js?v=20261018-back-description1"></script>
+  <script src="card-model.js?v=20261018-card-order1"></script>
+  <script src="vendor/diary-markdown.js?v=20261018-card-order1"></script>
+  <script src="diary-preview.js?v=20261018-card-order1"></script>
+  <script src="app.js?v=20261018-card-order1"></script>
+  <script src="card-editor.js?v=20261018-card-order1"></script>
+  <script src="structured-ui.js?v=20261018-card-order1"></script>
   <script src="vendor/card-pdf.js?v=20261017-pdf1"></script>
   <script src="pdf-layout.js?v=20261017-pdf1"></script>
-  <script src="project-pdf.js?v=20261018-back-description1"></script>
+  <script src="project-pdf.js?v=20261018-card-order1"></script>
 </body>
 </html>
 

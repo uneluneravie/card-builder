@@ -412,18 +412,47 @@ function openDeckPage(index) {
   $('#deckPageDescription').textContent = deck.descricao || 'Todas as cartas deste baralho.';
   $('#deckPageCount').textContent = `${deck.quantidade} ${deck.quantidade === 1 ? 'carta' : 'cartas'}`;
   $('#cardsGrid').innerHTML = deckCards(deck).map((card, cardIndex) => `
-    <button type="button" class="collection-card" data-card-index="${cardIndex}">
+    <div class="collection-card-item"><button type="button" class="collection-card" data-card-index="${cardIndex}">
       <span class="collection-card-art" ${card.imagem ? `style="background-image:url('${escapeHtml(card.imagem)}')"` : ''}>${card.imagem ? '' : '<span aria-hidden="true">✦</span>'}</span>
       <span class="collection-card-copy"><small>CARTA ${String(cardIndex + 1).padStart(2, '0')}</small><strong>${escapeHtml(card.titulo || `Carta ${cardIndex + 1}`)}</strong><span>${escapeHtml(card.descricao || 'Sem descrição.')}</span></span>
-    </button>`).join('');
+    </button><div class="card-order-actions" role="group" aria-label="Posição da carta ${cardIndex+1}">
+      <button type="button" data-move-card="${cardIndex}" data-direction="-1" aria-label="Mover carta ${cardIndex+1} para cima" ${cardIndex===0?'disabled':''}>↑</button>
+      <button type="button" data-move-card="${cardIndex}" data-direction="1" aria-label="Mover carta ${cardIndex+1} para baixo" ${cardIndex===deck.quantidade-1?'disabled':''}>↓</button>
+    </div></div>`).join('');
   $$('[data-card-index]').forEach((button) => button.addEventListener('click', () => {
     const cardIndex = Number(button.dataset.cardIndex);
     openCardPreview(deck, deckCards(deck)[cardIndex], cardIndex);
   }));
+  $$('[data-move-card]').forEach(button=>button.addEventListener('click',()=>moveDeckCard(Number(button.dataset.moveCard),Number(button.dataset.direction))));
   updateCardOverflowBadges();
   scheduleCardOverflowScan();
   history.replaceState(null, '', `#projeto/${activeProject.path}/baralhos/${index + 1}`);
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function moveDeckCard(index,direction) {
+  const deck=activeDecks[viewingDeckIndex];
+  if(!deck||![-1,1].includes(direction))return;
+  const cards=deckCards(deck),destination=index+direction;
+  if(index<0||index>=cards.length||destination<0||destination>=cards.length)return;
+  [cards[index],cards[destination]]=[cards[destination],cards[index]];
+  deck.cartas=cards;
+  const stored=readLocalJson('card-builder-decks',{});
+  const saved=Array.isArray(stored)?{}:stored;
+  saved[activeProject.path]=activeDecks;
+  localStorage.setItem('card-builder-decks',JSON.stringify(saved));
+  if(activeProject.local) {
+    activeProject.baralhos=activeDecks;
+    localStorage.setItem('card-builder-projects',JSON.stringify(readLocalJson('card-builder-projects',[]).map(project=>project.path===activeProject.path?activeProject:project)));
+  }
+  queueGithubFile(deckGithubPath(viewingDeckIndex),deck);
+  syncCompletedSave();
+  const scrollY=window.scrollY;
+  openDeckPage(viewingDeckIndex);
+  window.scrollTo({top:scrollY,behavior:'instant'});
+  const directionButton=$(`[data-move-card="${destination}"][data-direction="${direction}"]`);
+  (directionButton?.disabled?$(`[data-card-index="${destination}"]`):directionButton)?.focus({preventScroll:true});
+  showToast('Ordem atualizada',`${cards[destination].titulo} agora é a carta ${destination+1}.`);
 }
 
 function openCardPreview(deck, card, cardIndex) {
