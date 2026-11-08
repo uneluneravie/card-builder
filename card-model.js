@@ -38,7 +38,7 @@
         if(!Number.isFinite(t.larguraCm)||t.larguraCm<0.1||t.larguraCm>100||t.formato==='retangular'&&(!Number.isFinite(t.alturaCm)||t.alturaCm<0.1||t.alturaCm>100))err(deck.nome,'dimensões de token inválidas');
         if(typeof t.margem!=='boolean'||!/^#[0-9a-f]{6}$/i.test(t.corMargem||''))err(deck.nome,'margem de token inválida');
       }
-      if(!Number.isInteger(deck.quantidade)||deck.quantidade<1)err(deck.nome,'quantidade deve ser inteira e positiva');
+      if(!Number.isInteger(deck.quantidade)||deck.quantidade<0)err(deck.nome,'quantidade deve ser inteira e não negativa');
       if(deck.versaoFormato>=2 && deck.quantidade !== deck.cartas?.length)err(deck.nome,'quantidade difere do número de cartas');
       for(const card of deck.cartas||[]) {
         if(deck.versaoFormato>=2 && (!card.id||sets.cartas.has(card.id)))err(card.titulo,'ID de carta ausente ou duplicado');

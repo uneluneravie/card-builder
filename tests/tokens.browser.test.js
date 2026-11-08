@@ -100,6 +100,49 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   await page.locator('#newDeckButton').click();
   assert(await page.locator('#deckForm [name=textSize]').isEnabled());
   assert(await page.locator('#tokenSettings').isHidden());
+  await page.locator('#deckDialog [data-close-dialog]').first().click();
+  await page.locator('.token-deck-card').click();
+  await page.locator('#openDeckPage').click();
+  for (const remaining of [1,0]) {
+   await page.locator('[data-remove-card="0"]').click();
+   await page.getByRole('button',{name:'Sim, remover carta',exact:true}).click();
+   await page.waitForFunction(()=>!document.querySelector('#deleteCardDialog').open);
+   assert.equal(await page.evaluate(()=>activeDecks[0].quantidade),remaining);
+  }
+  assert(await page.locator('#cardsGrid .empty-state').isVisible());
+  await page.waitForFunction(()=>pendingGithubFiles.size===0);
+  await page.reload({waitUntil:'domcontentloaded'});
+  await connect();
+  await page.locator('[data-project-path]').filter({hasText:'Teste de tokens'}).click();
+  await page.locator('.token-deck-card').click();
+  assert.equal(await page.locator('#deckForm [name=quantity]').inputValue(),'0');
+  await page.locator('#openDeckPage').click();
+  assert.equal(await page.locator('[data-remove-card]').count(),0);
+  await page.locator('#backToProject').click();
+  await page.locator('#newDeckButton').click();
+  await page.locator('#deckForm [name=name]').fill('Cartas para remoção');
+  await page.locator('#deckForm [name=quantity]').fill('2');
+  await page.locator('#saveDeck').click();
+  await page.locator('.deck-card').filter({hasText:'Cartas para remoção'}).click();
+  await page.locator('#openDeckPage').click();
+  for(const width of [360,768,1280]) {
+   await page.setViewportSize({width,height:900});
+   await page.locator('[data-remove-card="0"]').click();
+   assert(await page.locator('#deleteCardDialog').evaluate(d=>d.scrollWidth<=d.clientWidth+2));
+   assert.equal(await page.evaluate(()=>activeDecks[1].quantidade),2);
+   await page.getByRole('button',{name:'Cancelar',exact:true}).click();
+  }
+  await page.locator('[data-remove-card="0"]').click();
+  await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(()=>activeDecks[1].quantidade),2);
+  const survivingId=await page.evaluate(()=>activeDecks[1].cartas[1].id);
+  await page.locator('[data-remove-card="0"]').click();
+  await page.getByRole('button',{name:'Sim, remover carta',exact:true}).click();
+  await page.waitForFunction(()=>!document.querySelector('#deleteCardDialog').open);
+  assert.equal(await page.evaluate(()=>activeDecks[1].cartas[0].id),survivingId);
+  assert.equal(await page.locator('#cardCount').textContent(),'1');
+  await page.waitForFunction(()=>pendingGithubFiles.size===0);
+  assert.equal([...files.values()].find(d=>d.nome==='Cartas para remoção').quantidade,1);
   assert.deepEqual(errors,[]);
   console.log('Tokens: criação, imagem, margem, formatos, dimensões, ordem, persistência, PDF e 360/768/1280 px validados.');
  } finally {await browser.close();server.close();}

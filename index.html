@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20261018-tokens1">
+  <link rel="stylesheet" href="styles.css?v=20261108-remove1">
 </head>
 <body>
   <div class="app-shell">
@@ -118,7 +118,7 @@
       <div class="form-grid">
         <label class="full">Nome do conjunto<input name="name" required placeholder="Ex.: Criaturas da Névoa"></label>
         <label data-card-setting>Tipo do baralho<input name="deckType" placeholder="Ex.: Situação, Item, Personagem"></label>
-        <label><span id="quantityLabel">Quantidade de cartas</span><input name="quantity" type="number" min="1" value="54" required></label>
+        <label><span id="quantityLabel">Quantidade de cartas</span><input name="quantity" type="number" min="0" value="54" required></label>
         <label data-card-setting>Tamanho<select name="size"><option>Padrão (63 × 88 mm)</option><option>Mini Chimera (43 × 65 mm)</option><option>57 × 89 mm (bridge)</option><option>70 × 120 mm (tarô)</option><option>Personalizado</option></select></label>
         <fieldset id="tokenSettings" class="custom-card-size full" hidden>
           <legend>Formato dos tokens</legend>
@@ -198,6 +198,15 @@
     </form>
   </dialog>
 
+  <dialog id="deleteCardDialog" class="dialog compact" aria-labelledby="deleteCardTitle" aria-describedby="deleteCardDescription">
+    <form id="deleteCardForm">
+      <div class="dialog-head"><div><p class="eyebrow danger-copy">REMOÇÃO DE CARTA</p><h2 id="deleteCardTitle">Remover carta?</h2></div><button type="button" data-close-dialog aria-label="Fechar confirmação de remoção">×</button></div>
+      <p id="deleteCardDescription" class="dialog-intro">A carta <strong id="deleteCardName"></strong> será removida do baralho. Ao confirmar, a alteração será salva e enviada para sincronização. Esta ação não pode ser desfeita.</p>
+      <p id="deleteCardFeedback" class="danger-copy" role="alert"></p>
+      <div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button" autofocus>Cancelar</button><button type="submit" class="danger-button">Sim, remover carta</button></div>
+    </form>
+  </dialog>
+
   <dialog id="deleteProjectDialog" class="dialog compact">
     <form id="deleteProjectForm">
       <div class="dialog-head"><div><p class="eyebrow danger-copy">AÇÃO DESTRUTIVA</p><h2>Excluir projeto?</h2></div><button type="button" data-close-dialog aria-label="Fechar">×</button></div>
@@ -219,11 +228,11 @@
       <div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button class="primary-button">Salvar definições</button></div>
     </form>
   </dialog>
-  <script src="card-model.js?v=20261018-tokens1"></script>
+  <script src="card-model.js?v=20261108-remove1"></script>
   <script src="vendor/diary-markdown.js?v=20261018-tokens1"></script>
   <script src="diary-preview.js?v=20261018-tokens1"></script>
   <script src="tokens.js?v=20261018-tokens1"></script>
-  <script src="app.js?v=20261018-tokens1"></script>
+  <script src="app.js?v=20261108-remove1"></script>
   <script src="card-editor.js?v=20261018-tokens1"></script>
   <script src="structured-ui.js?v=20261018-tokens1"></script>
   <script src="vendor/card-pdf.js?v=20261017-pdf1"></script>

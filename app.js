@@ -18,6 +18,7 @@ let activeDecks = [];
 let editingDeckIndex = null;
 let viewingDeckIndex = null;
 let editingCardIndex = null;
+let removingCardIndex = null;
 let activeDeckFiles = [];
 let githubConnection = null;
 let syncInterval = null;
@@ -317,7 +318,7 @@ function renderDiary() {
 function renderDecks(decks) {
   scheduleCardOverflowScan();
   const cards = decks.map((deck, index) => {
-    const progress = Math.round((deck.cartasProntas / deck.quantidade) * 100);
+    const progress = deck.quantidade ? Math.round((deck.cartasProntas / deck.quantidade) * 100) : 0;
     const theme = ['heroes', 'relics', 'lands'][index % 3];
     const progressClass = index % 3 === 1 ? 'amber' : index % 3 === 2 ? 'teal' : '';
     if (isTokenDeck(deck)) return tokenCollectionCard(deck,index);
@@ -425,18 +426,63 @@ function openDeckPage(index) {
     </button><div class="card-order-actions" role="group" aria-label="Posição da carta ${cardIndex+1}">
       <button type="button" data-move-card="${cardIndex}" data-direction="-1" aria-label="Mover carta ${cardIndex+1} para cima" ${cardIndex===0?'disabled':''}>↑</button>
       <button type="button" data-move-card="${cardIndex}" data-direction="1" aria-label="Mover carta ${cardIndex+1} para baixo" ${cardIndex===deck.quantidade-1?'disabled':''}>↓</button>
+      <button type="button" class="remove-card-button" data-remove-card="${cardIndex}" aria-label="Remover carta ${cardIndex+1}">Remover</button>
     </div></div>`).join('');
   $$('[data-card-index]').forEach((button) => button.addEventListener('click', () => {
     const cardIndex = Number(button.dataset.cardIndex);
     openCardPreview(deck, deckCards(deck)[cardIndex], cardIndex);
   }));
   $$('[data-move-card]').forEach(button=>button.addEventListener('click',()=>moveDeckCard(Number(button.dataset.moveCard),Number(button.dataset.direction))));
+  $$('[data-remove-card]').forEach(button => button.addEventListener('click', () => {
+    removingCardIndex = Number(button.dataset.removeCard);
+    $('#deleteCardName').textContent = deckCards(deck)[removingCardIndex].titulo || `Carta ${removingCardIndex + 1}`;
+    $('#deleteCardFeedback').textContent = '';
+    $('#deleteCardDialog').showModal();
+  }));
+  if (!deck.quantidade) $('#cardsGrid').innerHTML = '<p class="empty-state">Este baralho está vazio. Edite o baralho para adicionar cartas.</p>';
   if (isTokenDeck(deck)) renderTokenCollection(deck);
   updateCardOverflowBadges();
   scheduleCardOverflowScan();
   history.replaceState(null, '', `#projeto/${activeProject.path}/baralhos/${index + 1}`);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+$('#deleteCardForm').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const deck = activeDecks[viewingDeckIndex];
+  if (!deck || removingCardIndex === null) return;
+  const cards = deckCards(deck);
+  const removed = cards.splice(removingCardIndex, 1)[0];
+  if (!removed) return;
+  const updated = {...deck, cartas: cards, quantidade: cards.length,
+    cartasProntas: cards.filter(card => isTokenDeck(deck) ? card.imagem : card.titulo && card.descricao).length};
+  const prospective = activeDecks.map((item, index) => index === viewingDeckIndex ? updated : item);
+  const errors = CardModel.validate(activeProject, prospective);
+  if (errors.length) {
+    $('#deleteCardFeedback').textContent = 'Não foi possível remover a carta. Revise as referências e os dados do projeto: ' + errors.join('\n');
+    return;
+  }
+  activeDecks[viewingDeckIndex] = updated;
+  const stored = readLocalJson('card-builder-decks', {});
+  const saved = Array.isArray(stored) ? {} : stored;
+  saved[activeProject.path] = activeDecks;
+  localStorage.setItem('card-builder-decks', JSON.stringify(saved));
+  if (activeProject.local) {
+    activeProject.baralhos = activeDecks;
+    localStorage.setItem('card-builder-projects', JSON.stringify(readLocalJson('card-builder-projects', []).map(project => project.path === activeProject.path ? activeProject : project)));
+  }
+  queueGithubFile(deckGithubPath(viewingDeckIndex), updated);
+  syncCompletedSave();
+  $('#deleteCardDialog').close();
+  renderDecks(activeDecks);
+  $('#cardCount').textContent = activeDecks.reduce((total, item) => total + item.quantidade, 0);
+  const nextIndex = Math.min(removingCardIndex, cards.length - 1);
+  removingCardIndex = null;
+  openDeckPage(viewingDeckIndex);
+  ($(`[data-card-index="${nextIndex}"]`) || $('#backToProject')).focus({preventScroll: true});
+  showToast('Carta removida', `${removed.titulo || 'A carta'} foi removida do baralho.`);
+});
+$('#deleteCardDialog').addEventListener('close', () => { removingCardIndex = null; });
 
 function moveDeckCard(index,direction) {
   const deck=activeDecks[viewingDeckIndex];
